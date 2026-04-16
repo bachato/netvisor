@@ -26,7 +26,7 @@
 		dependencies_addBindingDetails,
 		dependencies_addBindingDetailsHelp
 	} from '$lib/paraglide/messages';
-	import BindingPicker, { type BindingPickerService } from '../shared/BindingPicker.svelte';
+	import BindingPicker from '../shared/BindingPicker.svelte';
 	import EdgeStyleForm from '$lib/features/dependencies/components/DependencyEditModal/EdgeStyleForm.svelte';
 	import { createColorHelper } from '$lib/shared/utils/styling';
 	import type { Dependency } from '$lib/features/dependencies/types/base';
@@ -152,12 +152,12 @@
 
 	let showUpgradeForm = $state(false);
 
-	let upgradePickerServices = $derived<BindingPickerService[]>(
+	let upgradeServiceIds = $derived<string[]>(
 		(() => {
 			if (!topology || !group || group.members.type !== 'Services') return [];
-			return group.members.service_ids
-				.filter((sid) => topology!.services.some((s) => s.id === sid))
-				.map((serviceId) => ({ serviceId }));
+			return group.members.service_ids.filter((sid) =>
+				topology!.services.some((s) => s.id === sid)
+			);
 		})()
 	);
 
@@ -169,8 +169,8 @@
 			if (!group) return;
 			const bindings = (value.bindings ?? {}) as Record<string, string>;
 			const bindingIds: string[] = [];
-			for (const s of upgradePickerServices) {
-				const id = bindings[s.serviceId];
+			for (const serviceId of upgradeServiceIds) {
+				const id = bindings[serviceId];
 				if (!id) return;
 				bindingIds.push(id);
 			}
@@ -193,10 +193,7 @@
 
 	let canSaveUpgrade = $derived.by(() => {
 		const bindings = (upgradeForm.state.values.bindings ?? {}) as Record<string, string>;
-		return (
-			upgradePickerServices.length > 0 &&
-			upgradePickerServices.every((s) => !!bindings[s.serviceId])
-		);
+		return upgradeServiceIds.length > 0 && upgradeServiceIds.every((sid) => !!bindings[sid]);
 	});
 
 	function cancelUpgrade() {
@@ -286,12 +283,21 @@
 				{:else}
 					<div class="card card-static space-y-2 p-3">
 						<span class="text-tertiary block text-xs">{dependencies_addBindingDetailsHelp()}</span>
-						<BindingPicker
-							form={upgradeForm}
-							{topology}
-							services={upgradePickerServices}
-							disabled={isMutationPending}
-						/>
+						{#each upgradeServiceIds as serviceId, flatIndex (serviceId)}
+							{@const service = topology?.services.find((s) => s.id === serviceId)}
+							{#if service}
+								<div class="card card-static space-y-1 p-2">
+									<div class="text-primary truncate text-xs font-medium">{service.name}</div>
+									<BindingPicker
+										form={upgradeForm}
+										{topology}
+										{serviceId}
+										{flatIndex}
+										disabled={isMutationPending}
+									/>
+								</div>
+							{/if}
+						{/each}
 						<div class="flex gap-2">
 							<button
 								type="button"

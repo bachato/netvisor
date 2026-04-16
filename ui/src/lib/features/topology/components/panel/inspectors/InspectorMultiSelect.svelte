@@ -37,8 +37,7 @@
 	import EdgeStyleForm from '$lib/features/dependencies/components/DependencyEditModal/EdgeStyleForm.svelte';
 	import { dependencyTypes, concepts, views } from '$lib/shared/stores/metadata';
 	import { getInspectorConfig } from './view-config';
-	import BindingPicker, { type BindingPickerService } from './shared/BindingPicker.svelte';
-	import TargetServicePicker from './shared/TargetServicePicker.svelte';
+	import DependencyTargetCard from './shared/DependencyTargetCard.svelte';
 	import SegmentedControl from '$lib/shared/components/forms/SegmentedControl.svelte';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
 	import { createForm } from '@tanstack/svelte-form';
@@ -56,10 +55,12 @@
 		topology_multiSelectReadOnlyHint,
 		topology_multiSelectGroupName,
 		common_clearSelection,
+		common_services,
 		tags_entityTags,
 		dependencies_createDependency,
 		dependencies_servicesOnly,
 		dependencies_withPorts,
+		dependencies_selectServicesHelp,
 		topology_multiSelectPreviewEdge,
 		topology_focusSelection,
 		tags_crossGroupSelectionHint,
@@ -378,17 +379,23 @@
 	// L3 (or any view marking Bindings required) forces the binding toggle on.
 	let bindingsRequired = $derived(inspectorConfig.dependency_creation === 'Bindings');
 
-	// Single TanStack form. `picks` and `bindings` are dynamic-key sub-objects —
-	// TargetServicePicker / BindingPicker render <form.Field name="picks.<elementId>.<serviceId>">
-	// and <form.Field name="bindings.<serviceId>">, matching the CredentialForm pattern
-	// (parent owns the form, children receive it as a prop and register dot-path fields).
+	// Single TanStack form. `picks` is a single-select per multi-candidate target
+	// (`picks.<elementId> = <chosen serviceId>`); `bindings.<serviceId> = <bindingId>`.
+	// Service / single-candidate targets don't need form entries — derived resolution
+	// knows their service ID directly.
 	type MemberMode = 'Services' | 'Bindings';
 	interface DepFormValues {
 		name: string;
 		dependency_type: DependencyType;
 		memberMode: MemberMode;
-		picks: Record<string, Record<string, boolean>>;
+		picks: Record<string, string>;
 		bindings: Record<string, string>;
+	}
+
+	// Each card's resolved service, in canvas selection order.
+	interface ResolvedService {
+		serviceId: string;
+		ipAddressIdFilter: string | null;
 	}
 
 	const form = createForm(() => ({
@@ -396,7 +403,7 @@
 			name: '',
 			dependency_type: DEFAULT_DEP_TYPE,
 			memberMode: 'Services' as MemberMode,
-			picks: {} as Record<string, Record<string, boolean>>,
+			picks: {} as Record<string, string>,
 			bindings: {} as Record<string, string>
 		} as DepFormValues,
 		onSubmit: async ({ value }) => {
@@ -430,57 +437,29 @@
 		}
 	}));
 
-	// The final list of services to include as dependency members, with optional IP scope.
-	interface ResolvedService {
-		serviceId: string;
-		ipAddressIdFilter: string | null;
-	}
-
 	let resolvedServices = $derived<ResolvedService[]>(
 		(() => {
 			if (!topology) return [] as ResolvedService[];
-			const seen = new Set<string>();
 			const out: ResolvedService[] = [];
-			const picksMap =
-				(form.state.values.picks as Record<string, Record<string, boolean>> | undefined) ?? {};
+			const picksMap = (form.state.values.picks as Record<string, string> | undefined) ?? {};
 			for (const target of depTargets) {
 				if (target.kind === 'service') {
-					if (seen.has(target.serviceId)) continue;
-					seen.add(target.serviceId);
 					out.push({ serviceId: target.serviceId, ipAddressIdFilter: null });
 				} else {
-					const targetPicks = picksMap[target.elementId] ?? {};
-					for (const serviceId of target.candidateServiceIds) {
-						if (!targetPicks[serviceId]) continue;
-						if (seen.has(serviceId)) continue;
-						seen.add(serviceId);
-						out.push({
-							serviceId,
-							ipAddressIdFilter: target.kind === 'ipAddress' ? target.ipAddressId : null
-						});
-					}
+					if (target.candidateServiceIds.length === 0) continue;
+					const picked =
+						target.candidateServiceIds.length === 1
+							? target.candidateServiceIds[0]
+							: (picksMap[target.elementId] ?? target.candidateServiceIds[0]);
+					out.push({
+						serviceId: picked,
+						ipAddressIdFilter: target.kind === 'ipAddress' ? target.ipAddressId : null
+					});
 				}
 			}
 			return out;
 		})()
 	);
-
-	let bindingPickerServices = $derived<BindingPickerService[]>(
-		resolvedServices.map((r) => ({
-			serviceId: r.serviceId,
-			ipAddressIdFilter: r.ipAddressIdFilter
-		}))
-	);
-
-	let hasUnresolvedTargets = $derived.by(() => {
-		const picksMap =
-			(form.state.values.picks as Record<string, Record<string, boolean>> | undefined) ?? {};
-		return depTargets.some((t) => {
-			if (t.kind === 'service') return false;
-			const targetPicks = picksMap[t.elementId] ?? {};
-			return !Object.values(targetPicks).some(Boolean);
-		});
-	});
 
 	let allServicesHaveBindings = $derived.by(() => {
 		const bindingsMap = (form.state.values.bindings as Record<string, string> | undefined) ?? {};
@@ -491,24 +470,6 @@
 	$effect(() => {
 		if (bindingsRequired && form.state.values.memberMode !== 'Bindings') {
 			form.setFieldValue('memberMode', 'Bindings');
-		}
-	});
-
-	// Auto-select a target's candidate when it has exactly one service, once per target.
-	// Avoids the user having to check a single-candidate host picker manually.
-	const seededTargets = new Set<string>();
-	$effect(() => {
-		for (const target of depTargets) {
-			if (target.kind === 'service') continue;
-			if (seededTargets.has(target.elementId)) continue;
-			if (target.candidateServiceIds.length === 1) {
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				(form as any).setFieldValue(
-					`picks.${target.elementId}.${target.candidateServiceIds[0]}`,
-					true
-				);
-			}
-			seededTargets.add(target.elementId);
 		}
 	});
 
@@ -535,7 +496,6 @@
 		if (!v.name.trim()) return false;
 		if (createDependencyMutation.isPending) return false;
 		if (resolvedServices.length < 2) return false;
-		if (hasUnresolvedTargets) return false;
 		if (v.memberMode === 'Bindings' && !allServicesHaveBindings) return false;
 		return true;
 	});
@@ -814,15 +774,6 @@
 						/>
 					</div>
 
-					<!-- Service disambiguation for host/IP targets -->
-					{#if topology}
-						{#each depTargets as target (target.elementId)}
-							{#if target.kind !== 'service'}
-								<TargetServicePicker {form} {topology} {target} />
-							{/if}
-						{/each}
-					{/if}
-
 					<!-- Services only / With ports -->
 					{#if !isTutorial && !bindingsRequired}
 						<form.Field name="memberMode">
@@ -838,8 +789,30 @@
 						</form.Field>
 					{/if}
 
-					{#if !isTutorial && form.state.values.memberMode === 'Bindings' && topology && resolvedServices.length > 0}
-						<BindingPicker {form} {topology} services={bindingPickerServices} />
+					<!-- Services section: one card per selection, in canvas order -->
+					{#if !isTutorial && topology && depTargets.length > 0}
+						{@const memberMode = form.state.values.memberMode}
+						{@const targetToFlatIndex = new Map(resolvedServices.map((r, i) => [r.serviceId, i]))}
+						<div class="space-y-2">
+							<span class="text-secondary block text-sm font-medium">{common_services()}</span>
+							<p class="text-tertiary text-xs">{dependencies_selectServicesHelp()}</p>
+							{#each depTargets as target (target.elementId)}
+								{@const pickedId =
+									target.kind === 'service'
+										? target.serviceId
+										: target.candidateServiceIds.length === 1
+											? target.candidateServiceIds[0]
+											: (form.state.values.picks?.[target.elementId] ??
+												target.candidateServiceIds[0])}
+								<DependencyTargetCard
+									{form}
+									{topology}
+									{target}
+									{memberMode}
+									flatIndex={targetToFlatIndex.get(pickedId) ?? 0}
+								/>
+							{/each}
+						</div>
 					{/if}
 
 					<!-- Rebuild warning + Create button -->
