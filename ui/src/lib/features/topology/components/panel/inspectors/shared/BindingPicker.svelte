@@ -1,6 +1,5 @@
 <script lang="ts">
 	import RichSelect from '$lib/shared/components/forms/selection/RichSelect.svelte';
-	import EntityDisplayWrapper from '$lib/shared/components/forms/selection/display/EntityDisplayWrapper.svelte';
 	import type { AnyFieldApi } from '@tanstack/svelte-form';
 	import {
 		BindingWithServiceDisplay,
@@ -90,30 +89,32 @@
 				})}
 			</p>
 		{:else}
-			<div class="text-tertiary text-xs italic">
+			<span class="text-tertiary text-xs italic">
 				{topology_multiSelectNoBindings()}
-			</div>
+			</span>
 		{/if}
 	{:else if candidates.length === 1}
-		<EntityDisplayWrapper
-			context={bindingContext}
-			item={candidates[0]}
-			displayComponent={BindingWithServiceDisplay}
-		/>
+		<!-- Singleton: show the binding inline as "IP · port/protocol" text so it fits
+		     the "listening on X" sentence in the card. -->
+		<span class="text-primary font-mono text-xs">
+			{BindingWithServiceDisplay.getDescription?.(candidates[0], bindingContext) ?? ''}
+		</span>
 	{:else}
-		<form.Field name="{fieldPrefix}.{serviceId}">
-			{#snippet children(field: AnyFieldApi)}
-				<RichSelect
-					options={candidates}
-					selectedValue={field.state.value ?? null}
-					placeholder={dependencies_selectPort()}
-					displayComponent={BindingWithServiceDisplay}
-					getOptionContext={() => bindingContext}
-					onSelect={(bindingId) => field.handleChange(bindingId)}
-					required
-					{disabled}
-				/>
-			{/snippet}
-		</form.Field>
+		<div class="min-w-0 flex-1">
+			<form.Field name="{fieldPrefix}.{serviceId}">
+				{#snippet children(field: AnyFieldApi)}
+					<RichSelect
+						options={candidates}
+						selectedValue={field.state.value ?? null}
+						placeholder={dependencies_selectPort()}
+						displayComponent={BindingWithServiceDisplay}
+						getOptionContext={() => bindingContext}
+						onSelect={(bindingId) => field.handleChange(bindingId)}
+						required
+						{disabled}
+					/>
+				{/snippet}
+			</form.Field>
+		</div>
 	{/if}
 {/if}

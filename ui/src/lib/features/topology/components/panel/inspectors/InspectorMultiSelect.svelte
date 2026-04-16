@@ -791,26 +791,14 @@
 
 					<!-- Services section: one card per selection, in canvas order -->
 					{#if !isTutorial && topology && depTargets.length > 0}
-						{@const memberMode = form.state.values.memberMode}
-						{@const targetToFlatIndex = new Map(resolvedServices.map((r, i) => [r.serviceId, i]))}
 						<div class="space-y-2">
 							<span class="text-secondary block text-sm font-medium">{common_services()}</span>
 							<p class="text-tertiary text-xs">{dependencies_selectServicesHelp()}</p>
-							{#each depTargets as target (target.elementId)}
-								{@const pickedId =
-									target.kind === 'service'
-										? target.serviceId
-										: target.candidateServiceIds.length === 1
-											? target.candidateServiceIds[0]
-											: (form.state.values.picks?.[target.elementId] ??
-												target.candidateServiceIds[0])}
-								<DependencyTargetCard
-									{form}
-									{topology}
-									{target}
-									{memberMode}
-									flatIndex={targetToFlatIndex.get(pickedId) ?? 0}
-								/>
+							{#each depTargets as target, targetIdx (target.elementId)}
+								{@const flatIndex = depTargets
+									.slice(0, targetIdx)
+									.filter((t) => t.kind === 'service' || t.candidateServiceIds.length > 0).length}
+								<DependencyTargetCard {form} {topology} {target} {flatIndex} />
 							{/each}
 						</div>
 					{/if}
