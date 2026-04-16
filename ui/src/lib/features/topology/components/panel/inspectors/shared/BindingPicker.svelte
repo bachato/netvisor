@@ -1,9 +1,11 @@
 <script lang="ts">
-	import RichSelect from '$lib/shared/components/forms/selection/RichSelect.svelte';
 	import EntityTag from '$lib/shared/components/data/EntityTag.svelte';
 	import { entityRef } from '$lib/shared/components/data/types';
 	import { entities } from '$lib/shared/stores/metadata';
 	import type { AnyFieldApi } from '@tanstack/svelte-form';
+	import EntityTagSelect, {
+		type EntityTagOption
+	} from '$lib/shared/components/forms/selection/EntityTagSelect.svelte';
 	import {
 		BindingDisplay,
 		type BindingDisplayContext
@@ -109,17 +111,21 @@
 			color={entities.getColorHelper('Port').color}
 		/>
 	{:else}
+		{@const bindingOptions: EntityTagOption[] = candidates.map((b) => ({
+			id: b.id,
+			entityRef: entityRef('Binding', b.id, b, bindingContext),
+			label: BindingDisplay.getLabel?.(b, bindingContext) ?? '',
+			icon: entities.getIconComponent('Port'),
+			color: entities.getColorHelper('Port').color
+		}))}
 		<div class="min-w-0 flex-1">
 			<form.Field name="{fieldPrefix}.{serviceId}">
 				{#snippet children(field: AnyFieldApi)}
-					<RichSelect
-						options={candidates}
+					<EntityTagSelect
+						options={bindingOptions}
 						selectedValue={field.state.value ?? null}
 						placeholder={dependencies_selectPort()}
-						displayComponent={BindingDisplay}
-						getOptionContext={() => bindingContext}
 						onSelect={(bindingId) => field.handleChange(bindingId)}
-						required
 						{disabled}
 					/>
 				{/snippet}

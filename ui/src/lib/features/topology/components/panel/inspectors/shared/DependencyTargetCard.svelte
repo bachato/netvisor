@@ -3,12 +3,11 @@
 	import EntityTag from '$lib/shared/components/data/EntityTag.svelte';
 	import { entityRef } from '$lib/shared/components/data/types';
 	import { entities, serviceDefinitions } from '$lib/shared/stores/metadata';
-	import RichSelect from '$lib/shared/components/forms/selection/RichSelect.svelte';
-	import {
-		ServiceDisplay,
-		type ServiceDisplayContext
-	} from '$lib/shared/components/forms/selection/display/ServiceDisplay.svelte';
+	import EntityTagSelect, {
+		type EntityTagOption
+	} from '$lib/shared/components/forms/selection/EntityTagSelect.svelte';
 	import BindingPicker from './BindingPicker.svelte';
+	import { common_host } from '$lib/paraglide/messages';
 	import type { DependencyTarget } from '../../../../resolvers';
 	import type { Topology } from '../../../../types/base';
 
@@ -95,20 +94,22 @@
 	}
 
 	let hasPicker = $derived(target.kind !== 'service' && candidates.length > 1);
-	let showListeningOn = $derived(memberMode === 'Bindings' && resolvedServiceId !== null);
 
-	// Service options for the RichSelect dropdown, annotated with host name as category.
-	const serviceDisplayWithHost = {
-		...ServiceDisplay,
-		getCategory: (svc: { host_id: string }) =>
-			topology.hosts.find((h) => h.id === svc.host_id)?.name ?? null
-	};
-	let serviceContext: ServiceDisplayContext = $derived({ compact: true });
+	let serviceOptions = $derived<EntityTagOption[]>(
+		candidates.map((svc) => ({
+			id: svc.id,
+			entityRef: entityRef('Service', svc.id, svc),
+			label: svc.name,
+			icon: serviceIcon(svc.service_definition),
+			color: serviceIconColor(svc.service_definition)
+		}))
+	);
 </script>
 
 <div class="card card-static space-y-2 p-2 text-sm">
-	<!-- Line 1: [HostTag] running -->
+	<!-- Line 1: Host {host} -->
 	<div class="flex flex-wrap items-center gap-1.5">
+		<span class="text-tertiary">{common_host()}</span>
 		{#if host}
 			<EntityTag
 				entityRef={entityRef('Host', host.id, host)}
@@ -117,22 +118,19 @@
 				color={entities.getColorHelper('Host').color}
 			/>
 		{/if}
-		<span class="text-tertiary">running</span>
 	</div>
 
-	<!-- Line 2: [Service] [listening on?] -->
+	<!-- Line 2: running {service} (tag or picker) -->
 	<div class="flex flex-wrap items-center gap-1.5">
+		<span class="text-tertiary">running</span>
 		{#if hasPicker}
 			<form.Field name="picks.{target.elementId}">
 				{#snippet children(field: AnyFieldApi)}
 					<div class="min-w-0 flex-1">
-						<RichSelect
-							options={candidates}
+						<EntityTagSelect
+							options={serviceOptions}
 							selectedValue={field.state.value ?? resolvedServiceId}
-							displayComponent={serviceDisplayWithHost}
-							getOptionContext={() => serviceContext}
 							onSelect={(id) => field.handleChange(id)}
-							required
 						/>
 					</div>
 				{/snippet}
@@ -147,14 +145,12 @@
 		{:else}
 			<span class="text-tertiary text-xs italic">—</span>
 		{/if}
-		{#if showListeningOn}
-			<span class="text-tertiary">listening on</span>
-		{/if}
 	</div>
 
-	<!-- Line 3 (Bindings mode only): [BindingTag or picker] -->
+	<!-- Line 3 (Bindings mode): listening on {binding} (tag or picker) -->
 	{#if memberMode === 'Bindings' && resolvedServiceId}
 		<div class="flex flex-wrap items-center gap-1.5">
+			<span class="text-tertiary">listening on</span>
 			<BindingPicker
 				{form}
 				{topology}

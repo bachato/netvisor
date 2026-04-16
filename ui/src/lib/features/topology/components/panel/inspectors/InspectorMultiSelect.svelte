@@ -63,7 +63,6 @@
 		dependencies_dependencyName,
 		dependencies_servicesOnly,
 		dependencies_withPorts,
-		dependencies_selectServicesHelp,
 		topology_multiSelectPreviewEdge,
 		topology_focusSelection,
 		tags_crossGroupSelectionHint,
@@ -818,7 +817,6 @@
 					{@const depType = formValues.dependency_type}
 					<div class="space-y-2">
 						<span class="text-secondary block text-sm font-medium">{common_services()}</span>
-						<p class="text-tertiary text-xs">{dependencies_selectServicesHelp()}</p>
 						{#each depTargets as target, targetIdx (target.elementId)}
 							{@const flatIndex = depTargets
 								.slice(0, targetIdx)
