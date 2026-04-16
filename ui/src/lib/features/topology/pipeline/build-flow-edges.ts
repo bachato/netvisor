@@ -5,6 +5,7 @@ import type { EdgeHandles } from '../layout/elk-layout';
 import { computeOptimalHandles } from '../layout/elk-layout';
 import type { SelectionStores } from '../selection';
 import type { AggregatedEdge } from '../collapse';
+import { resolveCollapsedAncestor } from '../collapse';
 import type { LayoutGraph } from '../layout/layout-graph';
 import { edgeTypes } from '$lib/shared/stores/metadata';
 import { getEdgeDisplayState, searchHiddenNodeIds, tagHiddenNodeIds } from '../interactions';
@@ -83,6 +84,8 @@ export interface BuildFlowEdgesParams {
 	elevatedEdges: TopologyEdge[];
 	collapsed: Set<string>;
 	elementToContainer: Map<string, string>;
+	/** Full parent map (element+container → parent) for ancestor resolution */
+	parentMap: Map<string, string>;
 	aggregatedEdges: AggregatedEdge[];
 	hiddenEdgeTypes: string[];
 	layoutNodes: import('../types/base').TopologyNode[];
@@ -104,10 +107,10 @@ export function buildFlowEdges(params: BuildFlowEdgesParams): BuildFlowEdgesResu
 		elevatedEdges,
 		collapsed,
 		elementToContainer,
+		parentMap,
 		aggregatedEdges,
 		hiddenEdgeTypes,
 		layoutNodes,
-		topology,
 		edgeHandles: edgeHandlesMap,
 		layoutGraph,
 		bundleEnabled,
@@ -138,7 +141,7 @@ export function buildFlowEdges(params: BuildFlowEdgesParams): BuildFlowEdgesResu
 
 			// Derive handles from original element-level edges' cached handles
 			if (!handles && agg.originalEdges.length > 0) {
-				handles = deriveAggregatedHandles(agg, collapsed, topology, edgeHandlesMap);
+				handles = deriveAggregatedHandles(agg, collapsed, parentMap, edgeHandlesMap);
 			}
 
 			// Fall back to position-based computation if no original handles found
@@ -301,44 +304,16 @@ export function buildFlowEdges(params: BuildFlowEdgesParams): BuildFlowEdgesResu
 function deriveAggregatedHandles(
 	agg: AggregatedEdge,
 	collapsed: Set<string>,
-	topology: Topology,
+	parentMap: Map<string, string>,
 	edgeHandlesMap: Map<string, EdgeHandles>
 ): EdgeHandles | undefined {
-	// Build parent map for ancestor resolution
-	const parentMap = new Map<string, string>();
-	for (const node of topology.nodes) {
-		if (node.node_type === 'Element') {
-			const pid =
-				(node as Record<string, unknown>).container_id ??
-				(node as Record<string, unknown>).subnet_id;
-			if (typeof pid === 'string') parentMap.set(node.id, pid);
-		} else if (node.node_type === 'Container') {
-			const pid = (node as Record<string, unknown>).parent_container_id as string | undefined;
-			if (pid) parentMap.set(node.id, pid);
-		}
-	}
-
-	function resolveAncestor(nodeId: string): string | null {
-		let cur = nodeId;
-		let result: string | null = null;
-		const visited = new Set<string>();
-		while (cur && !visited.has(cur)) {
-			visited.add(cur);
-			if (collapsed.has(cur)) result = cur;
-			const p = parentMap.get(cur);
-			if (!p || p === cur) break;
-			cur = p;
-		}
-		return result;
-	}
-
 	const handleCounts = new Map<string, number>();
 	for (const origEdge of agg.originalEdges) {
 		const origKey = `${origEdge.source}->${origEdge.target}`;
 		const origHandles =
 			edgeHandlesMap.get(origKey) ?? edgeHandlesMap.get(`${origEdge.target}->${origEdge.source}`);
 		if (origHandles) {
-			const resolvedSrc = resolveAncestor(origEdge.source as string);
+			const resolvedSrc = resolveCollapsedAncestor(origEdge.source as string, collapsed, parentMap);
 			const srcSide = resolvedSrc ?? (origEdge.source as string);
 			const aligned = srcSide === agg.source;
 			const srcH = aligned ? origHandles.sourceHandle : origHandles.targetHandle;
