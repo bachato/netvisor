@@ -13,6 +13,7 @@
 	} from '../../interactions';
 	import { collapsedContainers } from '../../collapse';
 	import { useTopology, selectedTopologyId } from '../../context';
+	import { activeView } from '../../queries';
 	import {
 		topology_searchPlaceholder,
 		topology_searchNoMatches,
@@ -51,6 +52,11 @@
 		collapsedNodes = value;
 	});
 
+	let currentView = $state(get(activeView));
+	activeView.subscribe((value) => {
+		currentView = value;
+	});
+
 	let isOpen = $state(get(searchOpen));
 	searchOpen.subscribe((value) => {
 		isOpen = value;
@@ -62,9 +68,9 @@
 		}
 	});
 
-	// Reactively update search filter when query changes
+	// Reactively update search filter when query or view changes
 	$effect(() => {
-		updateSearchFilter(topology, query);
+		updateSearchFilter(topology, query, currentView);
 	});
 
 	// Recompute navigable IDs when matches or collapse state change

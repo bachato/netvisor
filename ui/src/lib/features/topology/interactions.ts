@@ -16,7 +16,7 @@ import {
 	showDirectionality
 } from './layout/edge-classification';
 import { elevateEdgesToContainers } from './layout/edge-elevation';
-import { getContainerContents, buildEntityNodeIndex } from './resolvers';
+import { getContainerContents, buildEntityNodeIndex, type EntityNodeIndex } from './resolvers';
 import { getHostFromIPAddressIdFromCache } from '../hosts/queries';
 import {
 	getIPAddressesForHostFromCache,
@@ -189,30 +189,17 @@ export function updateTagFilter(
 		return;
 	}
 
-	// Derive filter behavior from element_config
-	const meta = view
-		? (views.getMetadata(view) as {
-				element_config?: {
-					container_entity: string | null;
-					element_entities: string[];
-					inline_entities: string[];
-				};
-			} | null)
-		: null;
-	const config = meta?.element_config;
-	const containerEntity = config?.container_entity ?? null;
-	const elementEntities = config?.element_entities ?? [];
-	const inlineEntities = config?.inline_entities ?? [];
+	const config = getViewElementConfig(view);
 
 	// Determine filter roles from element config and parent_entity relationships
-	const hostIsContainer = containerEntity === 'Host';
-	const hostIsElement = elementEntities.includes('Host');
-	const hostIsParent = elementEntities.some(
+	const hostIsContainer = config.container_entity === 'Host';
+	const hostIsElement = config.element_entities.includes('Host');
+	const hostIsParent = config.element_entities.some(
 		(e) => entities.getMetadata(e)?.parent_entity === 'Host'
 	);
 	const hostIsRelevant = hostIsContainer || hostIsElement || hostIsParent;
-	const serviceIsElement = elementEntities.includes('Service');
-	const serviceIsInline = inlineEntities.includes('Service');
+	const serviceIsElement = config.element_entities.includes('Service');
+	const serviceIsInline = config.inline_entities.includes('Service');
 	const serviceIsVisible = serviceIsElement || serviceIsInline;
 
 	const hiddenHostTagIds = tagFilter?.hidden_host_tag_ids ?? [];
@@ -713,19 +700,115 @@ export function getEdgeDisplayState(
 	return { shouldShowFull, shouldAnimate, isEndpointSearchHidden, isEndpointTagHidden };
 }
 
-/** Add all node IDs from an index map entry to matchSet (deduplicating) */
-function addIndexedNodes(indexMap: Map<string, string[]>, entityId: string, matchSet: Set<string>) {
-	const nodeIds = indexMap.get(entityId);
-	if (nodeIds) nodeIds.forEach((id) => matchSet.add(id));
+interface ViewElementConfig {
+	container_entity: string | null;
+	element_entities: string[];
+	inline_entities: string[];
+}
+
+/** Read ViewElementConfig from views metadata store, with safe defaults */
+function getViewElementConfig(view?: string): ViewElementConfig {
+	if (!view) return { container_entity: null, element_entities: [], inline_entities: [] };
+	const meta = views.getMetadata(view) as {
+		element_config?: {
+			container_entity: string | null;
+			element_entities: string[];
+			inline_entities: string[];
+		};
+	} | null;
+	return {
+		container_entity: meta?.element_config?.container_entity ?? null,
+		element_entities: meta?.element_config?.element_entities ?? [],
+		inline_entities: meta?.element_config?.inline_entities ?? []
+	};
+}
+
+interface EntityResolution {
+	elementNodeIds: string[];
+	containerNodeIds: string[];
+}
+
+/** Index map for looking up element nodes by entity type */
+const ENTITY_ELEMENT_INDEX: Record<string, (idx: EntityNodeIndex) => Map<string, string[]>> = {
+	Host: (idx) => idx.hostIdToNodes,
+	IPAddress: (idx) => idx.ipAddressIdToNodes,
+	Service: (idx) => idx.serviceIdToNodes,
+	Interface: (idx) => idx.interfaceIdToNodes
+};
+
+/**
+ * Resolve an entity to topology node IDs based on the current view's element config.
+ * Returns element and container node IDs separately so callers can decide behavior
+ * (search: add both to matches; tag filter: hide containers + descendants).
+ */
+function resolveEntityToNodes(
+	entityType: string,
+	entityId: string,
+	config: ViewElementConfig,
+	index: EntityNodeIndex,
+	topology: Topology
+): EntityResolution {
+	const elementNodeIds: string[] = [];
+	const containerNodeIds: string[] = [];
+
+	// 1. Direct element: entity type is an element in this view
+	if (config.element_entities.includes(entityType)) {
+		const getIndex = ENTITY_ELEMENT_INDEX[entityType];
+		if (getIndex) {
+			const nodeIds = getIndex(index).get(entityId);
+			if (nodeIds) elementNodeIds.push(...nodeIds);
+		}
+	}
+
+	// 2. Container: entity type is the container in this view
+	if (entityType === config.container_entity) {
+		if (entityType === 'Host') {
+			const cids = index.hostIdToContainerIds.get(entityId);
+			if (cids) containerNodeIds.push(...cids);
+		} else {
+			// Subnet containers: entity ID is the container node ID
+			containerNodeIds.push(entityId);
+		}
+	}
+
+	// 3. Parent propagation: entity type is parent_entity of an element entity
+	const isParent = config.element_entities.some(
+		(e) => entities.getMetadata(e)?.parent_entity === entityType
+	);
+	if (
+		isParent &&
+		entityType !== config.container_entity &&
+		!config.element_entities.includes(entityType)
+	) {
+		// hostIdToNodes maps host_id to all element nodes with that host_id,
+		// regardless of element type — works across views
+		const nodeIds = index.hostIdToNodes.get(entityId);
+		if (nodeIds) elementNodeIds.push(...nodeIds);
+	}
+
+	// 4. Inline entity: resolve through bindings to element nodes
+	if (config.inline_entities.includes(entityType) && entityType === 'Service') {
+		const service = topology.services.find((s) => s.id === entityId);
+		if (service) {
+			for (const binding of service.bindings) {
+				if (binding.ip_address_id) {
+					const nodeIds = index.ipAddressIdToNodes.get(binding.ip_address_id);
+					if (nodeIds) elementNodeIds.push(...nodeIds);
+				}
+			}
+		}
+	}
+
+	return { elementNodeIds, containerNodeIds };
 }
 
 /**
  * Update search filter: find nodes matching query, set non-matching nodes to fade.
- * Uses buildEntityNodeIndex for view-agnostic entity→node resolution.
- * Searches hosts (name/hostname), interfaces (ip_address/name), services (name),
+ * Uses resolveEntityToNodes for view-aware entity→node resolution.
+ * Searches hosts (name/hostname), ip addresses (ip_address/name), services (name),
  * subnets (name/cidr), and tags (name matched to entities).
  */
-export function updateSearchFilter(topology: Topology | undefined, query: string) {
+export function updateSearchFilter(topology: Topology | undefined, query: string, view?: string) {
 	if (!topology || !query.trim()) {
 		searchHiddenNodeIds.set(new Set());
 		searchMatchNodeIds.set([]);
@@ -735,45 +818,67 @@ export function updateSearchFilter(topology: Topology | undefined, query: string
 
 	const q = query.toLowerCase().trim();
 	const index = buildEntityNodeIndex(topology.nodes);
+	const config = getViewElementConfig(view);
 	const matchingSet = new Set<string>();
 
-	// allNodeIds = all element nodes + container nodes (for subnet/container search)
+	/** Resolve an entity match to visible nodes and add them to matchingSet */
+	const addResolved = (entityType: string, entityId: string) => {
+		const { elementNodeIds, containerNodeIds } = resolveEntityToNodes(
+			entityType,
+			entityId,
+			config,
+			index,
+			topology
+		);
+		for (const id of elementNodeIds) matchingSet.add(id);
+		for (const id of containerNodeIds) matchingSet.add(id);
+	};
+
+	// allNodeIds = all element nodes + container nodes
 	const allNodeIds = new Set<string>([...index.allElementNodeIds, ...index.allContainerNodeIds]);
 
-	// Search hosts -> match element nodes via hostIdToNodes
+	// Search hosts
 	for (const host of topology.hosts) {
 		const nameMatch = host.name.toLowerCase().includes(q);
 		const hostnameMatch = host.hostname?.toLowerCase().includes(q) ?? false;
 		if (nameMatch || hostnameMatch) {
-			addIndexedNodes(index.hostIdToNodes, host.id, matchingSet);
+			addResolved('Host', host.id);
 		}
 	}
 
-	// Search IP addresses -> match element nodes via ipAddressIdToNodes
+	// Search IP addresses
 	for (const ipAddr of topology.ip_addresses) {
 		const ipMatch = ipAddr.ip_address?.toLowerCase().includes(q) ?? false;
 		const nameMatch = ipAddr.name?.toLowerCase().includes(q) ?? false;
 		if (ipMatch || nameMatch) {
-			addIndexedNodes(index.ipAddressIdToNodes, ipAddr.id, matchingSet);
+			addResolved('IPAddress', ipAddr.id);
 		}
 	}
 
-	// Search services -> match via serviceIdToNodes + hostIdToNodes fallback
+	// Search services
 	for (const service of topology.services) {
 		if (service.name.toLowerCase().includes(q)) {
-			addIndexedNodes(index.serviceIdToNodes, service.id, matchingSet);
-			if (service.host_id) {
-				addIndexedNodes(index.hostIdToNodes, service.host_id, matchingSet);
-			}
+			addResolved('Service', service.id);
 		}
 	}
 
-	// Search subnets -> match container nodes directly (subnet.id IS container node.id)
+	// Search subnets
 	for (const subnet of topology.subnets) {
 		const nameMatch = subnet.name.toLowerCase().includes(q);
 		const cidrMatch = subnet.cidr.toLowerCase().includes(q);
 		if (nameMatch || cidrMatch) {
-			matchingSet.add(subnet.id);
+			addResolved('Subnet', subnet.id);
+		}
+	}
+
+	// Search interfaces
+	if (topology.interfaces) {
+		for (const iface of topology.interfaces) {
+			const aliasMatch = iface.if_alias?.toLowerCase().includes(q) ?? false;
+			const nameMatch = iface.if_name?.toLowerCase().includes(q) ?? false;
+			if (aliasMatch || nameMatch) {
+				addResolved('Interface', iface.id);
+			}
 		}
 	}
 
@@ -783,7 +888,7 @@ export function updateSearchFilter(topology: Topology | undefined, query: string
 		for (const tagId of host.tags) {
 			const tag = entityTags.find((t) => t.id === tagId);
 			if (tag && tag.name.toLowerCase().includes(q)) {
-				addIndexedNodes(index.hostIdToNodes, host.id, matchingSet);
+				addResolved('Host', host.id);
 				break;
 			}
 		}
@@ -793,10 +898,7 @@ export function updateSearchFilter(topology: Topology | undefined, query: string
 		for (const tagId of service.tags) {
 			const tag = entityTags.find((t) => t.id === tagId);
 			if (tag && tag.name.toLowerCase().includes(q)) {
-				addIndexedNodes(index.serviceIdToNodes, service.id, matchingSet);
-				if (service.host_id) {
-					addIndexedNodes(index.hostIdToNodes, service.host_id, matchingSet);
-				}
+				addResolved('Service', service.id);
 				break;
 			}
 		}
@@ -806,7 +908,7 @@ export function updateSearchFilter(topology: Topology | undefined, query: string
 		for (const tagId of subnet.tags) {
 			const tag = entityTags.find((t) => t.id === tagId);
 			if (tag && tag.name.toLowerCase().includes(q)) {
-				matchingSet.add(subnet.id);
+				addResolved('Subnet', subnet.id);
 				break;
 			}
 		}
