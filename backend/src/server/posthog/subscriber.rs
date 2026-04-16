@@ -140,6 +140,9 @@ impl EventSubscriber for PosthogService {
                 OnboardingOperation::FirstCredentialCreated,
                 OnboardingOperation::InviteSent,
                 OnboardingOperation::InviteAccepted,
+                OnboardingOperation::ProfileCompleted,
+                OnboardingOperation::FirstApplicationTagCreated,
+                OnboardingOperation::ReferralSourceCompleted,
             ]),
             discovery_phases: Some(vec![
                 DiscoveryPhase::Pending,

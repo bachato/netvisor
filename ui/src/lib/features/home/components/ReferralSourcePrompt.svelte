@@ -6,7 +6,6 @@
 	import { submitForm } from '$lib/shared/components/forms/form-context';
 	import SelectInput from '$lib/shared/components/forms/input/SelectInput.svelte';
 	import TextInput from '$lib/shared/components/forms/input/TextInput.svelte';
-	import { trackEvent } from '$lib/shared/utils/analytics';
 	import {
 		common_other,
 		common_reddit,
@@ -65,10 +64,6 @@
 		},
 		onSubmit: async ({ value }) => {
 			if (!value.referral_source) return;
-			trackEvent('onboarding_referral_source', {
-				referral_source: value.referral_source,
-				referral_source_other: value.referral_source_other || undefined
-			});
 			referralSourceMutation.mutate({
 				referral_source: value.referral_source,
 				referral_source_other: value.referral_source_other || undefined
