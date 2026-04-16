@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { get } from 'svelte/store';
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
-	import { Eye, EyeOff, X, Crosshair } from 'lucide-svelte';
+	import { Eye, EyeOff, X, Crosshair, ArrowDown } from 'lucide-svelte';
 	import { useSvelteFlow } from '@xyflow/svelte';
 	import {
 		selectedNodes,
@@ -56,8 +56,11 @@
 		topology_multiSelectGroupName,
 		common_clearSelection,
 		common_services,
+		common_hub,
+		common_spokes,
 		tags_entityTags,
 		dependencies_createDependency,
+		dependencies_dependencyName,
 		dependencies_servicesOnly,
 		dependencies_withPorts,
 		dependencies_selectServicesHelp,
@@ -725,124 +728,141 @@
 		{/if}
 
 		{#if inspectorConfig.dependency_creation}
-			<!-- Dependency creation section — conditionally shown based on view -->
-			<div class="space-y-2">
+			<!-- Dependency creation — flat layout, no outer wrapping card -->
+			<div class="space-y-3">
 				<span class="text-secondary block text-sm font-medium"
 					>{dependencies_createDependency()}</span
 				>
 
-				<div class="card card-static space-y-3 p-3">
-					<!-- Dependency type toggle + preview button -->
-					<form.Field name="dependency_type">
-						{#snippet children(field)}
-							<div class="flex items-center gap-2">
-								<SegmentedControl
-									options={['RequestPath', 'HubAndSpoke'].map((type) => ({
-										value: type,
-										label: '',
-										icon: dependencyTypes.getIconComponent(type)
-									}))}
-									selected={field.state.value}
-									onchange={(v) => field.handleChange(v as DependencyType)}
-								/>
-								<span class="text-secondary text-xs"
-									>{dependencyTypes.getName(field.state.value)}</span
-								>
-								<button
-									class="btn-secondary ml-auto flex items-center gap-1 p-1.5 text-xs"
-									onclick={togglePreview}
-									title={showPreview ? 'Hide preview' : 'Show preview'}
-								>
-									{#if showPreview}
-										<Eye class="h-3.5 w-3.5" />
-									{:else}
-										<EyeOff class="h-3.5 w-3.5" />
-									{/if}
-									{topology_multiSelectPreviewEdge()}
-								</button>
-							</div>
-						{/snippet}
-					</form.Field>
+				<!-- Dependency type toggle + preview button -->
+				<form.Field name="dependency_type">
+					{#snippet children(field)}
+						<div class="flex items-center gap-2">
+							<SegmentedControl
+								options={['RequestPath', 'HubAndSpoke'].map((type) => ({
+									value: type,
+									label: '',
+									icon: dependencyTypes.getIconComponent(type)
+								}))}
+								selected={field.state.value}
+								onchange={(v) => field.handleChange(v as DependencyType)}
+							/>
+							<span class="text-secondary text-xs"
+								>{dependencyTypes.getName(field.state.value)}</span
+							>
+							<button
+								class="btn-secondary ml-auto flex items-center gap-1 p-1.5 text-xs"
+								onclick={togglePreview}
+								title={showPreview ? 'Hide preview' : 'Show preview'}
+							>
+								{#if showPreview}
+									<Eye class="h-3.5 w-3.5" />
+								{:else}
+									<EyeOff class="h-3.5 w-3.5" />
+								{/if}
+								{topology_multiSelectPreviewEdge()}
+							</button>
+						</div>
+					{/snippet}
+				</form.Field>
 
-					<!-- Name input -->
-					<form.Field
-						name="name"
-						validators={{
-							onBlur: ({ value }: { value: string }) => required(value) || max(100)(value)
-						}}
-					>
+				<!-- Name input -->
+				<form.Field
+					name="name"
+					validators={{
+						onBlur: ({ value }: { value: string }) => required(value) || max(100)(value)
+					}}
+				>
+					{#snippet children(field)}
+						<TextInput
+							label={dependencies_dependencyName()}
+							id="dependency-name"
+							{field}
+							placeholder={topology_multiSelectGroupName()}
+						/>
+					{/snippet}
+				</form.Field>
+
+				<!-- Edge style & color — collapsed by default; matches how EdgeStyleForm
+				     renders on a selected dep edge. -->
+				<div class="card card-static p-2">
+					<EdgeStyleForm
+						bind:formData={edgeStyleFormData}
+						bind:collapsed={edgeStyleCollapsed}
+						editable={true}
+						showCollapseToggle={true}
+						onColorChange={(c) => (dependencyColor = c)}
+						onEdgeStyleChange={(s) => (dependencyEdgeStyle = s)}
+					/>
+				</div>
+
+				<!-- Services only / With ports -->
+				{#if !isTutorial && !bindingsRequired}
+					<form.Field name="memberMode">
 						{#snippet children(field)}
-							<TextInput
-								label=""
-								id="dependency-name"
-								{field}
-								placeholder={topology_multiSelectGroupName()}
+							<SegmentedControl
+								options={memberModeOptions}
+								selected={field.state.value}
+								onchange={(v) => field.handleChange(v as MemberMode)}
+								size="sm"
+								fullWidth={true}
 							/>
 						{/snippet}
 					</form.Field>
+				{/if}
 
-					<!-- Edge style & color — collapsed by default; matches how EdgeStyleForm
-					     renders on a selected dep edge. -->
-					<div class="card card-static p-2">
-						<EdgeStyleForm
-							bind:formData={edgeStyleFormData}
-							bind:collapsed={edgeStyleCollapsed}
-							editable={true}
-							showCollapseToggle={true}
-							onColorChange={(c) => (dependencyColor = c)}
-							onEdgeStyleChange={(s) => (dependencyEdgeStyle = s)}
-						/>
+				<!-- Services section: one card per selection, in canvas order.
+				     RequestPath inserts a down arrow between cards; HubAndSpoke labels
+				     the first card "Hub" and the rest "Spokes". -->
+				{#if !isTutorial && topology && depTargets.length > 0}
+					{@const depType = formValues.dependency_type}
+					<div class="space-y-2">
+						<span class="text-secondary block text-sm font-medium">{common_services()}</span>
+						<p class="text-tertiary text-xs">{dependencies_selectServicesHelp()}</p>
+						{#each depTargets as target, targetIdx (target.elementId)}
+							{@const flatIndex = depTargets
+								.slice(0, targetIdx)
+								.filter((t) => t.kind === 'service' || t.candidateServiceIds.length > 0).length}
+							{#if depType === 'HubAndSpoke' && targetIdx === 0}
+								<span class="text-tertiary block text-xs font-semibold uppercase"
+									>{common_hub()}</span
+								>
+							{:else if depType === 'HubAndSpoke' && targetIdx === 1}
+								<span class="text-tertiary mt-2 block text-xs font-semibold uppercase"
+									>{common_spokes()}</span
+								>
+							{/if}
+							<DependencyTargetCard {form} {topology} {target} {flatIndex} />
+							{#if depType === 'RequestPath' && targetIdx < depTargets.length - 1}
+								<div class="flex justify-center">
+									<ArrowDown class="text-secondary h-4 w-4" />
+								</div>
+							{/if}
+						{/each}
 					</div>
+				{/if}
 
-					<!-- Services only / With ports -->
-					{#if !isTutorial && !bindingsRequired}
-						<form.Field name="memberMode">
-							{#snippet children(field)}
-								<SegmentedControl
-									options={memberModeOptions}
-									selected={field.state.value}
-									onchange={(v) => field.handleChange(v as MemberMode)}
-									size="sm"
-									fullWidth={true}
-								/>
-							{/snippet}
-						</form.Field>
-					{/if}
-
-					<!-- Services section: one card per selection, in canvas order -->
-					{#if !isTutorial && topology && depTargets.length > 0}
-						<div class="space-y-2">
-							<span class="text-secondary block text-sm font-medium">{common_services()}</span>
-							<p class="text-tertiary text-xs">{dependencies_selectServicesHelp()}</p>
-							{#each depTargets as target, targetIdx (target.elementId)}
-								{@const flatIndex = depTargets
-									.slice(0, targetIdx)
-									.filter((t) => t.kind === 'service' || t.candidateServiceIds.length > 0).length}
-								<DependencyTargetCard {form} {topology} {target} {flatIndex} />
-							{/each}
-						</div>
-					{/if}
-
-					<!-- Rebuild warning + Create button -->
-					{#if isTutorial}
-						<button class="btn-primary w-full text-xs" onclick={onClearSelection}>
-							{topology_tutorialDone()}
-						</button>
-					{:else}
-						<div class="space-y-2">
+				<!-- Rebuild warning (only when auto-rebuild is off) + Create button -->
+				{#if isTutorial}
+					<button class="btn-primary w-full text-xs" onclick={onClearSelection}>
+						{topology_tutorialDone()}
+					</button>
+				{:else}
+					<div class="space-y-2">
+						{#if !$autoRebuild}
 							<p class="text-tertiary text-xs">
 								{topology_multiSelectCreateGroupRebuildWarning()}
 							</p>
-							<button
-								class="btn-primary w-full text-xs"
-								onclick={confirmGroupCreation}
-								disabled={!canCreate}
-							>
-								{dependencies_createDependency()}
-							</button>
-						</div>
-					{/if}
-				</div>
+						{/if}
+						<button
+							class="btn-primary w-full text-xs"
+							onclick={confirmGroupCreation}
+							disabled={!canCreate}
+						>
+							{dependencies_createDependency()}
+						</button>
+					</div>
+				{/if}
 			</div>
 		{/if}
 	{:else}

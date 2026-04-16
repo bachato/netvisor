@@ -4,8 +4,10 @@
 	import { Edit } from 'lucide-svelte';
 	import {
 		common_bezier,
+		common_color,
 		common_done,
 		common_straight,
+		common_style,
 		dependencies_edgeColor,
 		dependencies_edgeColorHelp,
 		dependencies_edgeStyleHelp,
@@ -84,8 +86,12 @@
 
 			<!-- Edge style label -->
 			<div class="flex flex-col">
-				<span class="text-primary text-sm font-medium">{selectedEdgeStyleLabel}</span>
-				<span class="text-tertiary text-xs capitalize">{formData.color}</span>
+				<span class="text-primary text-sm font-medium"
+					>{common_style()}: {selectedEdgeStyleLabel}</span
+				>
+				<span class="text-tertiary text-xs"
+					><span class="capitalize">{common_color()}: {formData.color}</span></span
+				>
 			</div>
 		</div>
 

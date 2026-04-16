@@ -16,6 +16,7 @@ import { NetworkDisplay } from '$lib/shared/components/forms/selection/display/N
 import { CredentialDisplay } from '$lib/shared/components/forms/selection/display/CredentialDisplay.svelte';
 import { TopologyDisplay } from '$lib/shared/components/forms/selection/display/TopologyDisplay.svelte';
 import { DaemonApiKeyDisplay } from '$lib/shared/components/forms/selection/display/DaemonApiKeyDisplay.svelte';
+import { BindingDisplay } from '$lib/shared/components/forms/selection/display/BindingDisplay.svelte';
 
 export interface EntityUIConfig {
 	tabId: string;
@@ -72,7 +73,8 @@ export const entityUIConfig: Record<EntityDiscriminants, EntityUIConfig | null> 
 		tabId: 'hosts',
 		parentType: 'Host',
 		parentIdField: 'host_id',
-		modalTab: 'services'
+		modalTab: 'services',
+		displayComponent: BindingDisplay
 	},
 	Subnet: { tabId: 'subnets', modalName: 'subnet-editor', displayComponent: SubnetDisplay },
 	Daemon: { tabId: 'daemons', displayComponent: DaemonDisplay },
