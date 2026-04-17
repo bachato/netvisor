@@ -927,6 +927,7 @@
 	"hosts_virtualization_emptyMessage": "No virtualization services on this host.",
 	"hosts_virtualization_emptySubtitle": "Container and VM relationships will appear here when Docker or hypervisor services are discovered on this host",
 	"hosts_virtualization_emptyTitle": "No Virtualization Services",
+	"hosts_virtualization_hypervisorService": "Hypervisor Service",
 	"hosts_virtualization_noContainersYet": "No containers managed by this service yet. Add services that run in containers on this host.",
 	"hosts_virtualization_noVmsYet": "No VMs managed by this service yet. Add hosts that are VMs running on this hypervisor.",
 	"hosts_virtualization_pleaseSave": "Please Save {name}",
