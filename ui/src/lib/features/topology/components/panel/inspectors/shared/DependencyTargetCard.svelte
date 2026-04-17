@@ -110,80 +110,81 @@
 	);
 </script>
 
-<div class="card card-static p-2 text-sm">
-	<div class="flex items-start gap-2">
-		<!-- Content column clips overflowing tags/text at the card's inner edge
-		     and fades the last 1rem so a too-long tag label or binding string
-		     blends into the card background instead of crossing its border. -->
-		<div class="dep-card-content min-w-0 flex-1 space-y-2 overflow-hidden">
-			<!-- Line 1: Host {host} -->
-			<div class="flex items-center gap-1.5">
-				<span class="text-tertiary flex-shrink-0">{common_host()}</span>
-				{#if host}
-					<EntityTag
-						entityRef={entityRef('Host', host.id, host)}
-						label={host.name}
-						icon={entities.getIconComponent('Host')}
-						color={entities.getColorHelper('Host').color}
-					/>
-				{/if}
-			</div>
-
-			<!-- Line 2: running {service} (tag or picker) -->
-			<div class="flex items-center gap-1.5">
-				<span class="text-tertiary flex-shrink-0">running</span>
-				{#if hasPicker}
-					<form.Field name="picks.{target.elementId}">
-						{#snippet children(field: AnyFieldApi)}
-							<div class="min-w-0 flex-1">
-								<EntityTagSelect
-									options={serviceOptions}
-									selectedValue={field.state.value ?? resolvedServiceId}
-									onSelect={(id) => field.handleChange(id)}
-								/>
-							</div>
-						{/snippet}
-					</form.Field>
-				{:else if resolvedService}
-					<EntityTag
-						entityRef={entityRef('Service', resolvedService.id, resolvedService)}
-						label={resolvedService.name}
-						icon={serviceIcon(resolvedService.service_definition)}
-						color={serviceIconColor(resolvedService.service_definition)}
-					/>
-				{:else}
-					<span class="text-tertiary text-xs italic">—</span>
-				{/if}
-			</div>
-
-			<!-- Line 3 (Bindings mode): at {binding} (tag or picker) -->
-			{#if memberMode === 'Bindings' && resolvedServiceId}
-				<div class="flex items-center gap-1.5">
-					<span class="text-tertiary flex-shrink-0">{common_at()}</span>
-					<BindingPicker
-						{form}
-						{topology}
-						serviceId={resolvedServiceId}
-						elementId={target.elementId}
-						{flatIndex}
-						{ipAddressIdFilter}
-					/>
-				</div>
+<!-- The card clips its own overflow and fades the last 1rem so long tag
+     labels / binding strings blend into the card background instead of
+     crossing its border. The X button is absolute-positioned on top of the
+     content so the content column spans the full card width — otherwise the
+     fade starts to the left of the X button and cuts off dropdown chevrons
+     that still have room. -->
+<div class="card card-static dep-card-content relative overflow-hidden p-2 text-sm">
+	<div class="space-y-2 {onRemove ? 'pr-7' : ''}">
+		<!-- Line 1: Host {host} -->
+		<div class="flex items-center gap-1.5">
+			<span class="text-tertiary flex-shrink-0">{common_host()}</span>
+			{#if host}
+				<EntityTag
+					entityRef={entityRef('Host', host.id, host)}
+					label={host.name}
+					icon={entities.getIconComponent('Host')}
+					color={entities.getColorHelper('Host').color}
+				/>
 			{/if}
 		</div>
 
-		{#if onRemove}
-			<button
-				type="button"
-				class="btn-icon flex-shrink-0 p-1"
-				onclick={onRemove}
-				title={common_remove()}
-				aria-label={common_remove()}
-			>
-				<X class="h-4 w-4" />
-			</button>
+		<!-- Line 2: running {service} (tag or picker) -->
+		<div class="flex items-center gap-1.5">
+			<span class="text-tertiary flex-shrink-0">running</span>
+			{#if hasPicker}
+				<form.Field name="picks.{target.elementId}">
+					{#snippet children(field: AnyFieldApi)}
+						<div class="min-w-0 flex-1">
+							<EntityTagSelect
+								options={serviceOptions}
+								selectedValue={field.state.value ?? resolvedServiceId}
+								onSelect={(id) => field.handleChange(id)}
+							/>
+						</div>
+					{/snippet}
+				</form.Field>
+			{:else if resolvedService}
+				<EntityTag
+					entityRef={entityRef('Service', resolvedService.id, resolvedService)}
+					label={resolvedService.name}
+					icon={serviceIcon(resolvedService.service_definition)}
+					color={serviceIconColor(resolvedService.service_definition)}
+				/>
+			{:else}
+				<span class="text-tertiary text-xs italic">—</span>
+			{/if}
+		</div>
+
+		<!-- Line 3 (Bindings mode): at {binding} (tag or picker) -->
+		{#if memberMode === 'Bindings' && resolvedServiceId}
+			<div class="flex items-center gap-1.5">
+				<span class="text-tertiary flex-shrink-0">{common_at()}</span>
+				<BindingPicker
+					{form}
+					{topology}
+					serviceId={resolvedServiceId}
+					elementId={target.elementId}
+					{flatIndex}
+					{ipAddressIdFilter}
+				/>
+			</div>
 		{/if}
 	</div>
+
+	{#if onRemove}
+		<button
+			type="button"
+			class="btn-icon absolute right-2 top-2 p-1"
+			onclick={onRemove}
+			title={common_remove()}
+			aria-label={common_remove()}
+		>
+			<X class="h-4 w-4" />
+		</button>
+	{/if}
 </div>
 
 <style>

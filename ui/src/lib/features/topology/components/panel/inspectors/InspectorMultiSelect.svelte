@@ -478,15 +478,13 @@
 	);
 
 	function removeTarget(target: DependencyTarget) {
-		if (editingDependency) {
-			if (target.kind === 'service') {
-				removedServiceIds.add(target.serviceId);
-			}
-		} else {
-			// Remove the target's node from the canvas selection — the derived depTargets
-			// and the rest of the form state will recompute naturally.
-			selectedNodes.update((ns) => ns.filter((n) => n.id !== target.elementId));
+		if (editingDependency && target.kind === 'service') {
+			removedServiceIds.add(target.serviceId);
 		}
+		// Also drop the node from the canvas selection so the highlight goes away —
+		// in edit mode startEditing() pushed the dep's member services into
+		// selectedNodes, so the canvas ring stays until we prune here.
+		selectedNodes.update((ns) => ns.filter((n) => n.id !== target.elementId));
 	}
 
 	// L3 (or any view marking Bindings required) forces the binding toggle on.
