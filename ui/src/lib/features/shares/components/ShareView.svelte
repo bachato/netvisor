@@ -4,14 +4,18 @@
 		getPublicShareMetadata,
 		getPublicShareTopology,
 		verifySharePassword,
-		getStoredSharePassword,
-		storeSharePassword
+		getStoredShareAccessToken,
+		storeShareAccessToken,
+		clearStoredShareAccessToken
 	} from '../queries';
 	import type { PublicShareMetadata, ShareWithTopology } from '../types/base';
+	import type { ErrorCode } from '$lib/generated/error-codes';
 	import Loading from '$lib/shared/components/feedback/Loading.svelte';
 	import PasswordGate from './PasswordGate.svelte';
 	import ReadOnlyTopologyViewer from './ReadOnlyTopologyViewer.svelte';
 	import { AlertTriangle } from 'lucide-svelte';
+
+	const SHARE_TOKEN_INVALID: ErrorCode = 'share_token_invalid';
 	interface Props {
 		shareId: string | undefined;
 		isEmbed?: boolean;
@@ -90,15 +94,19 @@
 
 			topologyData = topoResult.data;
 		} else {
-			const storedPassword = getStoredSharePassword(shareId);
-			if (storedPassword) {
+			const storedToken = getStoredShareAccessToken(shareId);
+			if (storedToken) {
 				const result = await getPublicShareTopology(shareId, {
 					embed: isEmbed,
-					password: storedPassword,
+					access_token: storedToken,
 					view: currentView
 				});
 				if (result.success && result.data) {
 					topologyData = result.data;
+				} else if (result.code === SHARE_TOKEN_INVALID) {
+					// Token is expired/revoked (e.g. password changed server-side).
+					// Drop it and fall through to PasswordGate.
+					clearStoredShareAccessToken(shareId);
 				}
 			}
 		}
@@ -110,18 +118,19 @@
 		if (!shareId) return false;
 
 		const verifyResult = await verifySharePassword(shareId, password);
-		if (!verifyResult.success) {
+		if (!verifyResult.success || !verifyResult.access_token) {
 			return false;
 		}
 
-		// Password is correct - store it and close the gate
-		storeSharePassword(shareId, password);
+		// Password accepted — persist the server-issued access token (never
+		// the raw password) and close the gate.
+		storeShareAccessToken(shareId, verifyResult.access_token);
 		passwordVerified = true;
 
 		// Now try to load topology - errors will show in main view, not gate
 		const topoResult = await getPublicShareTopology(shareId, {
 			embed: isEmbed,
-			password,
+			access_token: verifyResult.access_token,
 			view: currentView
 		});
 		if (topoResult.success && topoResult.data) {
@@ -139,16 +148,24 @@
 		viewLoading = true;
 		currentView = view;
 
-		const password = shareMetadata?.requires_password ? getStoredSharePassword(shareId) : undefined;
+		const accessToken = shareMetadata?.requires_password
+			? getStoredShareAccessToken(shareId)
+			: null;
 
 		const topoResult = await getPublicShareTopology(shareId, {
 			embed: isEmbed,
-			password: password ?? undefined,
+			access_token: accessToken ?? undefined,
 			view
 		});
 
 		if (topoResult.success && topoResult.data) {
 			topologyData = topoResult.data;
+		} else if (topoResult.code === SHARE_TOKEN_INVALID) {
+			// Stored token expired or was revoked (password change).
+			// Clear it and re-open PasswordGate for a fresh verification.
+			clearStoredShareAccessToken(shareId);
+			topologyData = null;
+			passwordVerified = false;
 		} else {
 			error = topoResult.error || 'Failed to load topology';
 		}

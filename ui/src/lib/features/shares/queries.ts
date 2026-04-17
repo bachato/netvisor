@@ -154,12 +154,21 @@ export async function getPublicShareMetadata(
 }
 
 /**
- * Verify share password
+ * Verify share password and exchange it for a server-issued access token.
+ *
+ * The returned `access_token` is an opaque string (HS256 JWT) tied to the
+ * share's current password hash. Store it and send it on subsequent
+ * `/topology` requests in place of the raw password.
  */
 export async function verifySharePassword(
 	shareId: string,
 	password: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{
+	success: boolean;
+	access_token?: string;
+	expires_at?: string;
+	error?: string;
+}> {
 	try {
 		const response = await fetch(`/api/v1/shares/public/${shareId}/verify`, {
 			method: 'POST',
@@ -175,19 +184,31 @@ export async function verifySharePassword(
 			return { success: false, error: result.error || 'Invalid password' };
 		}
 
-		return { success: true };
+		return {
+			success: true,
+			access_token: result.data?.access_token,
+			expires_at: result.data?.expires_at
+		};
 	} catch {
 		return { success: false, error: 'Failed to verify password' };
 	}
 }
 
 /**
- * Fetch public share topology
+ * Fetch public share topology. Pass the `access_token` obtained from
+ * `verifySharePassword` for password-protected shares. On 401 (expired or
+ * tampered token), `code === 'share_token_invalid'` is set so callers can
+ * clear the stored token and re-prompt.
  */
 export async function getPublicShareTopology(
 	shareId: string,
-	options: { embed?: boolean; password?: string; view: string }
-): Promise<{ success: boolean; data?: ShareWithTopology; error?: string }> {
+	options: { embed?: boolean; access_token?: string; view: string }
+): Promise<{
+	success: boolean;
+	data?: ShareWithTopology;
+	error?: string;
+	code?: string;
+}> {
 	try {
 		const url = options.embed
 			? `/api/v1/shares/public/${shareId}/topology?embed=true`
@@ -197,13 +218,17 @@ export async function getPublicShareTopology(
 			headers: {
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify({ password: options.password, view: options.view })
+			body: JSON.stringify({ access_token: options.access_token, view: options.view })
 		});
 
 		const result = await response.json();
 
 		if (!response.ok || result.error) {
-			return { success: false, error: result.error || 'Failed to fetch topology' };
+			return {
+				success: false,
+				error: result.error || 'Failed to fetch topology',
+				code: result.code
+			};
 		}
 
 		return { success: true, data: result.data };
@@ -255,20 +280,33 @@ export function generateEmbedCode(
 }
 
 /**
- * Store share password in session storage
+ * Store share access token in session storage.
+ *
+ * The token (not the raw password) is what's persisted across view
+ * switches and iframe reloads. Changing the share password invalidates
+ * all outstanding tokens server-side.
  */
-export function storeSharePassword(shareId: string, password: string): void {
+export function storeShareAccessToken(shareId: string, token: string): void {
 	if (typeof window !== 'undefined') {
-		sessionStorage.setItem(`share_password_${shareId}`, password);
+		sessionStorage.setItem(`share_token_${shareId}`, token);
 	}
 }
 
 /**
- * Get stored share password from session storage
+ * Get stored share access token from session storage
  */
-export function getStoredSharePassword(shareId: string): string | null {
+export function getStoredShareAccessToken(shareId: string): string | null {
 	if (typeof window !== 'undefined') {
-		return sessionStorage.getItem(`share_password_${shareId}`);
+		return sessionStorage.getItem(`share_token_${shareId}`);
 	}
 	return null;
+}
+
+/**
+ * Drop the stored access token, e.g. after a 401 from the topology endpoint.
+ */
+export function clearStoredShareAccessToken(shareId: string): void {
+	if (typeof window !== 'undefined') {
+		sessionStorage.removeItem(`share_token_${shareId}`);
+	}
 }
