@@ -110,14 +110,13 @@
 	);
 </script>
 
-<!-- The card clips its own overflow and fades the last 1rem so long tag
-     labels / binding strings blend into the card background instead of
-     crossing its border. The X button is absolute-positioned on top of the
+<!-- Fade + overflow-hidden live on an inner wrapper so the card's border
+     stays fully visible. The X button is absolute-positioned on top of the
      content so the content column spans the full card width — otherwise the
      fade starts to the left of the X button and cuts off dropdown chevrons
      that still have room. -->
-<div class="card card-static dep-card-content relative overflow-hidden p-2 text-sm">
-	<div class="space-y-2 {onRemove ? 'pr-7' : ''}">
+<div class="card card-static relative p-2 text-sm">
+	<div class="dep-card-content space-y-2 overflow-hidden {onRemove ? 'pr-7' : ''}">
 		<!-- Line 1: Host {host} -->
 		<div class="flex items-center gap-1.5">
 			<span class="text-tertiary flex-shrink-0">{common_host()}</span>
