@@ -116,7 +116,9 @@
      fade starts to the left of the X button and cuts off dropdown chevrons
      that still have room. -->
 <div class="card card-static relative p-2 text-sm">
-	<div class="dep-card-content space-y-2 overflow-hidden {onRemove ? 'pr-7' : ''}">
+	<!-- pr reserves space for the fade region (and the X button when present) so
+	     dropdown chevrons / tag tails never sit inside the fade. -->
+	<div class="dep-card-content space-y-2 overflow-hidden {onRemove ? 'pr-7' : 'pr-4'}">
 		<!-- Line 1: Host {host} -->
 		<div class="flex items-center gap-1.5">
 			<span class="text-tertiary flex-shrink-0">{common_host()}</span>
