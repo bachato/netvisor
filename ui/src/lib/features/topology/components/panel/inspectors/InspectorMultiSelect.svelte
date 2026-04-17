@@ -917,7 +917,7 @@
 				     Between-card arrow + direction label:
 				       RequestPath: "↓ calls" between every pair of cards.
 				       HubAndSpoke: "↓ serves" between Hub card and Spokes header. -->
-				{#if !isTutorial && topology && depTargets.length > 0}
+				{#if topology && depTargets.length > 0}
 					{@const depType = formValues.dependency_type}
 					<div class="space-y-2">
 						<span class="text-secondary block text-sm font-medium">{common_services()}</span>
