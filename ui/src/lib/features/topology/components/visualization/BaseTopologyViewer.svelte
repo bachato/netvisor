@@ -717,8 +717,13 @@
 		}
 		if (selNodes.length === 0 && !viewportMoved) {
 			tick().then(() => {
-				// Skip if a click handler has set an active selection
-				if (get(selectionStores.selectedNode) || get(selectionStores.selectedEdge)) return;
+				// Skip if a click handler has set an active selection, or a multi-selection is active
+				if (
+					get(selectionStores.selectedNode) ||
+					get(selectionStores.selectedEdge) ||
+					get(selectionStores.selectedNodes).length > 0
+				)
+					return;
 				clearSelection(selectionStores);
 				clearEdgeHoverState();
 				syncEdgeDisplayState();

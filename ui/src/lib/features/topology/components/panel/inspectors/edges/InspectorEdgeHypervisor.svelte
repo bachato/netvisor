@@ -6,6 +6,11 @@
 	import { autoRebuild } from '$lib/features/topology/queries';
 	import { useTopology, selectedTopologyId } from '$lib/features/topology/context';
 	import { getTopologyEditState } from '$lib/features/topology/state';
+	import {
+		hosts_virtualization_hypervisorService,
+		hosts_virtualization_virtualMachines,
+		hosts_virtualization_noVmsYet
+	} from '$lib/paraglide/messages';
 
 	let { edge, hypervisorServiceId }: { edge: Edge; hypervisorServiceId: string } = $props();
 
@@ -18,13 +23,27 @@
 
 	let editState = $derived(getTopologyEditState(topology, $autoRebuild, isReadonly));
 
-	let vmService = $derived(topology ? topology.services.find((s) => s.id == hypervisorServiceId) : null);
+	let hypervisorService = $derived(
+		topology ? topology.services.find((s) => s.id == hypervisorServiceId) : null
+	);
 	let hypervisorHost = $derived(topology ? topology.hosts.find((h) => h.id == edge.target) : null);
+
+	let managedVms = $derived(
+		topology
+			? topology.hosts.filter(
+					(h) =>
+						h.virtualization?.type === 'Proxmox' &&
+						h.virtualization.details.service_id === hypervisorServiceId
+				)
+			: []
+	);
 </script>
 
 <div class="space-y-3">
-	{#if vmService}
-		<span class="text-secondary mb-2 block text-sm font-medium">VM Service</span>
+	{#if hypervisorService}
+		<span class="text-secondary mb-2 block text-sm font-medium"
+			>{hosts_virtualization_hypervisorService()}</span
+		>
 		<div class="card card-static">
 			<EntityDisplayWrapper
 				context={{
@@ -35,7 +54,7 @@
 					entityTags: isReadonly ? (topology?.entity_tags ?? []) : undefined,
 					compact: true
 				}}
-				item={vmService}
+				item={hypervisorService}
 				displayComponent={ServiceDisplay}
 			/>
 		</div>
@@ -59,5 +78,28 @@
 				displayComponent={HostDisplay}
 			/>
 		</div>
+	{/if}
+
+	<span class="text-secondary mb-2 block text-sm font-medium"
+		>{hosts_virtualization_virtualMachines()}</span
+	>
+	{#if managedVms.length === 0}
+		<p class="text-secondary text-sm">{hosts_virtualization_noVmsYet()}</p>
+	{:else}
+		{#each managedVms as vmHost (vmHost.id)}
+			<div class="card card-static">
+				<EntityDisplayWrapper
+					context={{
+						services: topology?.services.filter((s) => s.host_id == vmHost.id) ?? [],
+						showEntityTagPicker: true,
+						tagPickerDisabled: !editState.isEditable,
+						entityTags: isReadonly ? (topology?.entity_tags ?? []) : undefined,
+						compact: true
+					}}
+					item={vmHost}
+					displayComponent={HostDisplay}
+				/>
+			</div>
+		{/each}
 	{/if}
 </div>
