@@ -19,7 +19,8 @@
 		disabled = false,
 		badge = '',
 		disablePopover = false,
-		disableNavigate = false
+		disableNavigate = false,
+		truncate = false
 	}: {
 		entityRef: EntityRef;
 		label: string;
@@ -34,6 +35,8 @@
 		 * `disablePopover` for that.
 		 */
 		disableNavigate?: boolean;
+		/** Pass-through to the underlying Tag: shrink to container + fade-out. */
+		truncate?: boolean;
 	} = $props();
 
 	let triggerEl: HTMLDivElement | undefined = $state();
@@ -82,8 +85,12 @@
 </script>
 
 {#if isStaticTags}
-	<span class="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full">
-		<Tag {icon} {color} {disabled} {label} {badge} pill={true} />
+	<span
+		class="inline-flex {truncate
+			? 'min-w-0 max-w-full'
+			: 'flex-shrink-0'} items-center gap-1 whitespace-nowrap rounded-full"
+	>
+		<Tag {icon} {color} {disabled} {label} {badge} pill={true} {truncate} />
 	</span>
 {:else if disableNavigate}
 	<!-- Non-interactive (no click-to-navigate, no hover-brightness) but still tracks
@@ -91,16 +98,20 @@
 	     Cursor is inherited from the parent (e.g. pointer when wrapped in a button). -->
 	<div
 		bind:this={triggerEl}
-		class="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full"
+		class="inline-flex {truncate
+			? 'min-w-0 max-w-full'
+			: 'flex-shrink-0'} items-center gap-1 whitespace-nowrap rounded-full"
 		onmouseenter={handleMouseEnter}
 		onmouseleave={handleMouseLeave}
 	>
-		<Tag {icon} {color} {disabled} {label} {badge} pill={true} />
+		<Tag {icon} {color} {disabled} {label} {badge} pill={true} {truncate} />
 	</div>
 {:else}
 	<div
 		bind:this={triggerEl}
-		class="inline-flex flex-shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap rounded-full brightness-100 transition-all hover:brightness-90 dark:hover:brightness-125"
+		class="inline-flex {truncate
+			? 'min-w-0 max-w-full'
+			: 'flex-shrink-0'} cursor-pointer items-center gap-1 whitespace-nowrap rounded-full brightness-100 transition-all hover:brightness-90 dark:hover:brightness-125"
 		onmouseenter={handleMouseEnter}
 		onmouseleave={handleMouseLeave}
 		onclick={handleClick}
@@ -110,7 +121,7 @@
 		role="button"
 		tabindex="0"
 	>
-		<Tag {icon} {color} {disabled} {label} {badge} pill={true} />
+		<Tag {icon} {color} {disabled} {label} {badge} pill={true} {truncate} />
 	</div>
 {/if}
 

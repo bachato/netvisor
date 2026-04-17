@@ -18,6 +18,7 @@
 		isShiny = false,
 		nativeTooltip = false,
 		faded = false,
+		truncate = false,
 		onclick = undefined,
 		onmouseenter = undefined,
 		onmouseleave = undefined,
@@ -35,6 +36,11 @@
 		isShiny?: boolean;
 		nativeTooltip?: boolean;
 		faded?: boolean;
+		/**
+		 * When true, the tag shrinks to fit its container (min-w-0 + max-w-full) and
+		 * fades out at the right edge if the label is too long. The tag stays on one line.
+		 */
+		truncate?: boolean;
 		onclick?: ((e: MouseEvent) => void) | undefined;
 		onmouseenter?: ((e: MouseEvent) => void) | undefined;
 		onmouseleave?: ((e: MouseEvent) => void) | undefined;
@@ -60,11 +66,12 @@
 			? 'rounded-full'
 			: 'rounded'} px-2 py-0.5 text-xs font-medium
 		{isUnknown ? unknownClasses : disabled ? 'text-tertiary bg-gray-700/30' : `${bgColor} ${textColor}`}
-		{isShiny ? 'tag-shiny' : ''}"
+		{isShiny ? 'tag-shiny' : ''}
+		{truncate ? 'tag-truncate' : ''}"
 	>
 		{#if icon}
 			{@const Icon = icon}
-			<Icon size={16} class={textColor} />
+			<Icon size={16} class="{textColor} flex-shrink-0" />
 		{/if}
 
 		<span class="truncate">{label ?? common_unknown()}</span>
@@ -92,7 +99,9 @@
 		use:tooltip
 		data-tooltip={nativeTooltip ? null : title || null}
 		title={nativeTooltip ? title || undefined : undefined}
-		class="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded brightness-100 transition-all hover:brightness-90 dark:hover:brightness-125 {fadedClasses}"
+		class="inline-flex {truncate
+			? 'min-w-0 max-w-full'
+			: 'flex-shrink-0'} items-center gap-1 whitespace-nowrap rounded brightness-100 transition-all hover:brightness-90 dark:hover:brightness-125 {fadedClasses}"
 		onclick={(e) => e.stopPropagation()}
 	>
 		{@render content()}
@@ -103,7 +112,9 @@
 		use:tooltip
 		data-tooltip={nativeTooltip ? null : title || null}
 		title={nativeTooltip ? title || undefined : undefined}
-		class="inline-flex flex-shrink-0 cursor-pointer appearance-none items-center gap-1 whitespace-nowrap rounded brightness-100 transition-all hover:brightness-90 dark:hover:brightness-125 {fadedClasses}"
+		class="inline-flex {truncate
+			? 'min-w-0 max-w-full'
+			: 'flex-shrink-0'} cursor-pointer appearance-none items-center gap-1 whitespace-nowrap rounded brightness-100 transition-all hover:brightness-90 dark:hover:brightness-125 {fadedClasses}"
 		{onclick}
 		{onmouseenter}
 		{onmouseleave}
@@ -116,13 +127,28 @@
 		use:tooltip
 		data-tooltip={nativeTooltip ? null : title || null}
 		title={nativeTooltip ? title || undefined : undefined}
-		class="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded {fadedClasses}"
+		class="inline-flex {truncate
+			? 'min-w-0 max-w-full'
+			: 'flex-shrink-0'} items-center gap-1 whitespace-nowrap rounded {fadedClasses}"
 	>
 		{@render content()}
 	</div>
 {/if}
 
 <style>
+	/* When a Tag has truncate=true: apply a right-edge fade mask so the label
+	   gracefully fades out instead of hard-truncating with an ellipsis. The
+	   inner .truncate span still clips overflow via overflow:hidden. We override
+	   text-overflow to `clip` so no "..." appears before the fade. */
+	:global(.tag-truncate) {
+		-webkit-mask-image: linear-gradient(to right, black calc(100% - 1rem), transparent 100%);
+		mask-image: linear-gradient(to right, black calc(100% - 1rem), transparent 100%);
+	}
+
+	:global(.tag-truncate) :global(.truncate) {
+		text-overflow: clip;
+	}
+
 	:global(.tag-shiny) {
 		position: relative;
 		overflow: hidden;

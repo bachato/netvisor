@@ -392,6 +392,9 @@
 
 	// ----- Element-aware dependency creation -----
 
+	// In edit mode, the X-button adds services here so they get filtered out of depTargets.
+	const removedServiceIds = new SvelteSet<string>();
+
 	// Resolve selected nodes to dependency targets (service / host / ipAddress).
 	// Each non-service target requires the user to pick its services.
 	let depTargets = $derived<DependencyTarget[]>(
@@ -409,21 +412,35 @@
 									return svc?.id;
 								})
 								.filter((id): id is string => !!id);
-				return serviceIds.map((sid): DependencyTarget => {
-					const svc = topology.services.find((s) => s.id === sid);
-					const host = svc ? topology.hosts.find((h) => h.id === svc.host_id) : undefined;
-					return {
-						kind: 'service',
-						serviceId: sid,
-						elementId: sid,
-						label: svc?.name ?? '',
-						hostName: host?.name ?? ''
-					};
-				});
+				return serviceIds
+					.filter((sid) => !removedServiceIds.has(sid))
+					.map((sid): DependencyTarget => {
+						const svc = topology.services.find((s) => s.id === sid);
+						const host = svc ? topology.hosts.find((h) => h.id === svc.host_id) : undefined;
+						return {
+							kind: 'service',
+							serviceId: sid,
+							elementId: sid,
+							label: svc?.name ?? '',
+							hostName: host?.name ?? ''
+						};
+					});
 			}
 			return resolveDependencyTargets(nodes, topology);
 		})()
 	);
+
+	function removeTarget(target: DependencyTarget) {
+		if (editingDependency) {
+			if (target.kind === 'service') {
+				removedServiceIds.add(target.serviceId);
+			}
+		} else {
+			// Remove the target's node from the canvas selection — the derived depTargets
+			// and the rest of the form state will recompute naturally.
+			selectedNodes.update((ns) => ns.filter((n) => n.id !== target.elementId));
+		}
+	}
 
 	// L3 (or any view marking Bindings required) forces the binding toggle on.
 	let bindingsRequired = $derived(inspectorConfig.dependency_creation === 'Bindings');
@@ -921,7 +938,13 @@
 									>{common_spokes()}</span
 								>
 							{/if}
-							<DependencyTargetCard {form} {topology} {target} {flatIndex} />
+							<DependencyTargetCard
+								{form}
+								{topology}
+								{target}
+								{flatIndex}
+								onRemove={() => removeTarget(target)}
+							/>
 							{#if depType === 'RequestPath' && targetIdx < depTargets.length - 1}
 								<div class="flex flex-col items-center gap-0.5">
 									<span class="text-tertiary text-xs">{common_makesRequestTo()}</span>

@@ -6,6 +6,7 @@
 		selectedNodes,
 		previewEdges,
 		topologyOptions,
+		editingDependencyId,
 		OPTIONS_PANEL_WIDTH_PX
 	} from '../../queries';
 	import type { Topology } from '../../types/base';
@@ -121,7 +122,10 @@
 					? 180
 					: 350}px);"
 			>
-				{#if multiSelectedNodes.length >= 2}
+				{#if multiSelectedNodes.length >= 2 || $editingDependencyId}
+					{@const editingDep = $editingDependencyId
+						? (effectiveTopology?.dependencies.find((d) => d.id === $editingDependencyId) ?? null)
+						: null}
 					<InspectorMultiSelect
 						topology={effectiveTopology}
 						{isReadOnly}
@@ -129,6 +133,11 @@
 						onClearSelection={onClearSelection ?? (() => selectedNodes.set([]))}
 						{onGroupCreated}
 						{onDependencyTypeChange}
+						editingDependency={editingDep}
+						onDone={() => {
+							editingDependencyId.set(null);
+							selectedNodes.set([]);
+						}}
 					/>
 				{:else if isTutorial}
 					<div class="text-secondary py-4 text-center text-sm">

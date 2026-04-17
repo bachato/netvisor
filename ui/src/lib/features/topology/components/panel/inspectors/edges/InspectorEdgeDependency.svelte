@@ -22,10 +22,14 @@
 		common_edit
 	} from '$lib/paraglide/messages';
 	import EdgeStyleForm from '$lib/features/dependencies/components/DependencyEditModal/EdgeStyleForm.svelte';
-	import InspectorMultiSelect from '../InspectorMultiSelect.svelte';
 	import { createColorHelper } from '$lib/shared/utils/styling';
 	import type { Dependency } from '$lib/features/dependencies/types/base';
-	import { autoRebuild } from '$lib/features/topology/queries';
+	import {
+		autoRebuild,
+		editingDependencyId,
+		selectedNodes,
+		selectedEdge
+	} from '$lib/features/topology/queries';
 	import { useTopology, selectedTopologyId } from '$lib/features/topology/context';
 	import { getTopologyEditState } from '$lib/features/topology/state';
 	import { clearSelection } from '$lib/features/topology/selection';
@@ -143,9 +147,33 @@
 		compact: true
 	});
 
-	// Edit mode: swap this inspector body for the multi-select dep editor,
-	// prepopulated with the current dependency.
-	let isEditing = $state(false);
+	// Edit: push the dep's member services into the canvas selection, clear the
+	// edge selection, and set the editingDependencyId store so the panel routes
+	// to InspectorMultiSelect in edit mode.
+	function startEditing() {
+		if (!group || !topology) return;
+		const serviceIds =
+			group.members.type === 'Services'
+				? group.members.service_ids
+				: group.members.binding_ids
+						.map((bid) => topology!.services.find((s) => s.bindings.some((b) => b.id === bid))?.id)
+						.filter((id): id is string => !!id);
+
+		// Find the rendered nodes for those services. Service element nodes use the
+		// service ID as their node ID.
+		const serviceNodes = serviceIds
+			.map((sid) => topology!.nodes.find((n) => n.id === sid))
+			.filter((n): n is NonNullable<typeof n> => !!n)
+			// Svelte Flow's Node type expects `position` etc — our topology nodes already
+			// carry those. Cast via unknown to avoid a type war over two shapes that match.
+			.map((n) => n as unknown as import('@xyflow/svelte').Node);
+
+		if (serviceNodes.length > 0) {
+			selectedNodes.set(serviceNodes);
+		}
+		selectedEdge.set(null);
+		editingDependencyId.set(group.id);
+	}
 
 	// Context for group display with description
 	let groupContext = $derived({
@@ -163,87 +191,78 @@
 
 <div class="space-y-3">
 	{#if group && localGroup}
-		{#if isEditing && topology}
-			<InspectorMultiSelect
-				{topology}
-				editingDependency={group}
-				onClearSelection={() => (isEditing = false)}
-				onDone={() => (isEditing = false)}
+		<span class="text-secondary mb-2 block text-sm font-medium">Dependency</span>
+		<div class="card card-static">
+			<EntityDisplayWrapper
+				context={groupContext}
+				item={group}
+				displayComponent={DependencyDisplay}
 			/>
-		{:else}
-			<span class="text-secondary mb-2 block text-sm font-medium">Dependency</span>
-			<div class="card card-static">
-				<EntityDisplayWrapper
-					context={groupContext}
-					item={group}
-					displayComponent={DependencyDisplay}
-				/>
-			</div>
+		</div>
 
-			{#if !isReadonly && editState.isEditable}
+		{#if !isReadonly && editState.isEditable}
+			<button
+				type="button"
+				class="btn-secondary flex w-full items-center justify-center gap-2 text-xs"
+				onclick={startEditing}
+			>
+				<Edit class="h-4 w-4" />
+				{common_edit()}
+			</button>
+		{/if}
+
+		<span class="text-secondary mb-2 block text-sm font-medium">Services</span>
+		{#if group.members.type === 'Bindings'}
+			{#each group.members.binding_ids as bindingId (bindingId)}
+				{@const bindingService = getServiceForBindingFromTopology(bindingId)}
+				{@const bindingHost = bindingService ? getHostForService(bindingService.host_id) : null}
+				{@const bindingData = getBindingFromTopology(bindingId)}
+				{#if bindingService && bindingHost && bindingData}
+					<div
+						class={isRequestPath
+							? `card card-static ${bindingId == sourceId || bindingId == targetId ? 'ring-1 ring-gray-500' : ''}`
+							: `card card-static ${bindingId == sourceId ? `ring-1 ${groupColor.ring}` : bindingId == targetId ? 'ring-1 ring-gray-500' : ''}`}
+					>
+						<EntityDisplayWrapper
+							context={bindingContext}
+							item={bindingData}
+							displayComponent={BindingWithServiceDisplay}
+						/>
+					</div>
+					{#if bindingId == sourceId && isRequestPath}
+						<div class="flex flex-col items-center">
+							<ArrowDown class="text-secondary h-5 w-5" />
+						</div>
+					{/if}
+				{/if}
+			{/each}
+		{:else if group.members.type === 'Services'}
+			{#each group.members.service_ids as serviceId (serviceId)}
+				{@const service = topology?.services.find((s) => s.id === serviceId)}
+				{#if service}
+					<div class="card card-static">
+						<EntityDisplayWrapper
+							context={{ compact: true } satisfies ServiceDisplayContext}
+							item={service}
+							displayComponent={ServiceDisplay}
+						/>
+					</div>
+				{/if}
+			{/each}
+		{/if}
+
+		{#if !isReadonly}
+			<div class="pt-2">
 				<button
 					type="button"
-					class="btn-secondary flex w-full items-center justify-center gap-2 text-xs"
-					onclick={() => (isEditing = true)}
+					disabled={isDeleting}
+					onclick={handleDelete}
+					class="btn-danger flex w-full items-center justify-center gap-2"
 				>
-					<Edit class="h-4 w-4" />
-					{common_edit()}
+					<Trash2 class="h-4 w-4" />
+					{isDeleting ? common_deleting() : common_delete()}
 				</button>
-			{/if}
-
-			<span class="text-secondary mb-2 block text-sm font-medium">Services</span>
-			{#if group.members.type === 'Bindings'}
-				{#each group.members.binding_ids as bindingId (bindingId)}
-					{@const bindingService = getServiceForBindingFromTopology(bindingId)}
-					{@const bindingHost = bindingService ? getHostForService(bindingService.host_id) : null}
-					{@const bindingData = getBindingFromTopology(bindingId)}
-					{#if bindingService && bindingHost && bindingData}
-						<div
-							class={isRequestPath
-								? `card card-static ${bindingId == sourceId || bindingId == targetId ? 'ring-1 ring-gray-500' : ''}`
-								: `card card-static ${bindingId == sourceId ? `ring-1 ${groupColor.ring}` : bindingId == targetId ? 'ring-1 ring-gray-500' : ''}`}
-						>
-							<EntityDisplayWrapper
-								context={bindingContext}
-								item={bindingData}
-								displayComponent={BindingWithServiceDisplay}
-							/>
-						</div>
-						{#if bindingId == sourceId && isRequestPath}
-							<div class="flex flex-col items-center">
-								<ArrowDown class="text-secondary h-5 w-5" />
-							</div>
-						{/if}
-					{/if}
-				{/each}
-			{:else if group.members.type === 'Services'}
-				{#each group.members.service_ids as serviceId (serviceId)}
-					{@const service = topology?.services.find((s) => s.id === serviceId)}
-					{#if service}
-						<div class="card card-static">
-							<EntityDisplayWrapper
-								context={{ compact: true } satisfies ServiceDisplayContext}
-								item={service}
-								displayComponent={ServiceDisplay}
-							/>
-						</div>
-					{/if}
-				{/each}
-			{/if}
-
-			{#if !isReadonly}
-				<div class="pt-2">
-					<button
-						type="button"
-						disabled={isDeleting}
-						onclick={handleDelete}
-						class="btn-danger flex w-full items-center justify-center gap-2"
-					>
-						<Trash2 class="h-4 w-4" />
-						{isDeleting ? common_deleting() : common_delete()}
-					</button>
-				</div>
-			{/if}
+			</div>
 		{/if}
 	{/if}
 </div>

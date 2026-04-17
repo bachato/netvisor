@@ -559,6 +559,10 @@ export const selectedTopologyId = writable<string | null>(null);
 export const selectedNode = writable<Node | null>(null);
 export const selectedEdge = writable<Edge | null>(null);
 export const selectedNodes = writable<Node[]>([]);
+/** When set, the multi-select inspector renders as an editor for the dependency
+ *  with this ID instead of a create form. Set by the dep edge inspector's Edit
+ *  button; cleared on Update or Cancel. */
+export const editingDependencyId = writable<string | null>(null);
 export const previewEdges = writable<Edge[]>([]);
 export const autoRebuild = writable<boolean>(loadAutoRebuildFromStorage());
 export const activeView = writable<TopologyView>('L3Logical');
@@ -726,8 +730,7 @@ export function hydrateStoresFromTopology(
 					typeof rule === 'object' &&
 					'ByServiceCategory' in rule &&
 					rule.ByServiceCategory.is_infra_rule &&
-					(!rule.ByServiceCategory.categories ||
-						rule.ByServiceCategory.categories.length === 0)
+					(!rule.ByServiceCategory.categories || rule.ByServiceCategory.categories.length === 0)
 				) {
 					const useCase = getOrgUseCase();
 					elementRules[i] = {

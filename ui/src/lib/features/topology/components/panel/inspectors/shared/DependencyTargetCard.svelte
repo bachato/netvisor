@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { AnyFieldApi } from '@tanstack/svelte-form';
+	import { X } from 'lucide-svelte';
 	import EntityTag from '$lib/shared/components/data/EntityTag.svelte';
 	import { entityRef } from '$lib/shared/components/data/types';
 	import { entities, serviceDefinitions } from '$lib/shared/stores/metadata';
@@ -7,7 +8,7 @@
 		type EntityTagOption
 	} from '$lib/shared/components/forms/selection/EntityTagSelect.svelte';
 	import BindingPicker from './BindingPicker.svelte';
-	import { common_host, common_at } from '$lib/paraglide/messages';
+	import { common_host, common_at, common_remove } from '$lib/paraglide/messages';
 	import type { DependencyTarget } from '../../../../resolvers';
 	import type { Topology } from '../../../../types/base';
 
@@ -15,13 +16,16 @@
 		form,
 		topology,
 		target,
-		flatIndex
+		flatIndex,
+		onRemove
 	}: {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		form: any;
 		topology: Topology;
 		target: DependencyTarget;
 		flatIndex: number;
+		/** Remove this card's target from the dep (and the canvas selection in create mode). */
+		onRemove?: () => void;
 	} = $props();
 
 	// Mirror form state — form.state.values isn't tracked by Svelte 5 $derived.
@@ -106,58 +110,76 @@
 	);
 </script>
 
-<div class="card card-static space-y-2 p-2 text-sm">
-	<!-- Line 1: Host {host} -->
-	<div class="flex flex-wrap items-center gap-1.5">
-		<span class="text-tertiary">{common_host()}</span>
-		{#if host}
-			<EntityTag
-				entityRef={entityRef('Host', host.id, host)}
-				label={host.name}
-				icon={entities.getIconComponent('Host')}
-				color={entities.getColorHelper('Host').color}
-			/>
-		{/if}
-	</div>
+<div class="card card-static p-2 text-sm">
+	<div class="flex items-start gap-2">
+		<div class="min-w-0 flex-1 space-y-2">
+			<!-- Line 1: Host {host} -->
+			<div class="flex min-w-0 items-center gap-1.5">
+				<span class="text-tertiary flex-shrink-0">{common_host()}</span>
+				{#if host}
+					<EntityTag
+						entityRef={entityRef('Host', host.id, host)}
+						label={host.name}
+						icon={entities.getIconComponent('Host')}
+						color={entities.getColorHelper('Host').color}
+						truncate={true}
+					/>
+				{/if}
+			</div>
 
-	<!-- Line 2: running {service} (tag or picker) -->
-	<div class="flex flex-wrap items-center gap-1.5">
-		<span class="text-tertiary">running</span>
-		{#if hasPicker}
-			<form.Field name="picks.{target.elementId}">
-				{#snippet children(field: AnyFieldApi)}
-					<div class="min-w-0 flex-1">
-						<EntityTagSelect
-							options={serviceOptions}
-							selectedValue={field.state.value ?? resolvedServiceId}
-							onSelect={(id) => field.handleChange(id)}
-						/>
-					</div>
-				{/snippet}
-			</form.Field>
-		{:else if resolvedService}
-			<EntityTag
-				entityRef={entityRef('Service', resolvedService.id, resolvedService)}
-				label={resolvedService.name}
-				icon={serviceIcon(resolvedService.service_definition)}
-				color={serviceIconColor(resolvedService.service_definition)}
-			/>
-		{:else}
-			<span class="text-tertiary text-xs italic">—</span>
-		{/if}
-	</div>
+			<!-- Line 2: running {service} (tag or picker) -->
+			<div class="flex min-w-0 items-center gap-1.5">
+				<span class="text-tertiary flex-shrink-0">running</span>
+				{#if hasPicker}
+					<form.Field name="picks.{target.elementId}">
+						{#snippet children(field: AnyFieldApi)}
+							<div class="min-w-0 flex-1">
+								<EntityTagSelect
+									options={serviceOptions}
+									selectedValue={field.state.value ?? resolvedServiceId}
+									onSelect={(id) => field.handleChange(id)}
+								/>
+							</div>
+						{/snippet}
+					</form.Field>
+				{:else if resolvedService}
+					<EntityTag
+						entityRef={entityRef('Service', resolvedService.id, resolvedService)}
+						label={resolvedService.name}
+						icon={serviceIcon(resolvedService.service_definition)}
+						color={serviceIconColor(resolvedService.service_definition)}
+						truncate={true}
+					/>
+				{:else}
+					<span class="text-tertiary text-xs italic">—</span>
+				{/if}
+			</div>
 
-	<!-- Line 3 (Bindings mode): at {binding} (tag or picker) -->
-	{#if memberMode === 'Bindings' && resolvedServiceId}
-		<div class="flex flex-wrap items-center gap-1.5">
-			<span class="text-tertiary">{common_at()}</span>
-			<BindingPicker
-				{form}
-				{topology}
-				serviceId={resolvedServiceId}
-				{flatIndex}
-				{ipAddressIdFilter}
-			/>
+			<!-- Line 3 (Bindings mode): at {binding} (tag or picker) -->
+			{#if memberMode === 'Bindings' && resolvedServiceId}
+				<div class="flex min-w-0 items-center gap-1.5">
+					<span class="text-tertiary flex-shrink-0">{common_at()}</span>
+					<BindingPicker
+						{form}
+						{topology}
+						serviceId={resolvedServiceId}
+						{flatIndex}
+						{ipAddressIdFilter}
+					/>
+				</div>
+			{/if}
 		</div>
-	{/if}
+
+		{#if onRemove}
+			<button
+				type="button"
+				class="btn-icon flex-shrink-0 p-1"
+				onclick={onRemove}
+				title={common_remove()}
+				aria-label={common_remove()}
+			>
+				<X class="h-4 w-4" />
+			</button>
+		{/if}
+	</div>
 </div>
