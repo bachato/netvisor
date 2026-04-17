@@ -312,13 +312,31 @@
 		});
 	}
 
+	// Bindable flag mirroring the app-tag picker's dropdown state.
+	let appPickerOpen = $state(false);
+
+	// Tracks whether the user clicked X on the Ungrouped pseudotag in the current session.
+	// While true, the pseudotag hides and the picker's "+" affordance is also hidden so the
+	// dropdown input is the only visible control. If the user closes the dropdown without
+	// picking a tag and the selection is still ungrouped, we restore the pseudotag.
+	let ungroupedDismissed = $state(false);
+
+	// Gates the restore-on-close effect so it doesn't fire between the dropdown closing
+	// (sync, from handleAddTag in the picker) and the bulk-add mutation resolving.
+	let addingAppTag = $state(false);
+
 	// App-group tag handlers — always target the selected services. No rule tracking.
 	async function handleAddAppTag(tagId: string) {
-		await bulkAddTagMutation.mutateAsync({
-			entity_ids: selectedServiceIds,
-			entity_type: 'Service',
-			tag_id: tagId
-		});
+		addingAppTag = true;
+		try {
+			await bulkAddTagMutation.mutateAsync({
+				entity_ids: selectedServiceIds,
+				entity_type: 'Service',
+				tag_id: tagId
+			});
+		} finally {
+			addingAppTag = false;
+		}
 	}
 
 	async function handleRemoveAppTag(tagId: string) {
@@ -329,8 +347,11 @@
 		});
 	}
 
-	// Bindable flag to programmatically open the app-tag picker from the Ungrouped pseudotag.
-	let appPickerOpen = $state(false);
+	$effect(() => {
+		if (!appPickerOpen && !addingAppTag && ungroupedDismissed && appState.type === 'ungrouped') {
+			ungroupedDismissed = false;
+		}
+	});
 
 	// Check if a ByTag rule already exists covering the recently added tags
 	let existingRuleCoversRecentTags = $derived.by(() => {
@@ -879,7 +900,7 @@
 								<p class="text-tertiary text-xs">{tags_inheritedOverrideHint()}</p>
 							{/if}
 							<div class="flex flex-wrap items-center gap-1.5">
-								{#if appState.type === 'ungrouped'}
+								{#if appState.type === 'ungrouped' && !ungroupedDismissed}
 									<Tag
 										label={common_ungrouped()}
 										color="Gray"
@@ -887,7 +908,10 @@
 										isShiny={true}
 										pill={true}
 										removable={true}
-										onRemove={() => (appPickerOpen = true)}
+										onRemove={() => {
+											ungroupedDismissed = true;
+											appPickerOpen = true;
+										}}
 									/>
 								{/if}
 								<TagPickerInline
@@ -897,6 +921,7 @@
 									onRemove={handleRemoveAppTag}
 									availableTags={appAvailableTags}
 									allowCreate={false}
+									hideAddButton={appState.type === 'ungrouped' && !ungroupedDismissed}
 								/>
 							</div>
 						{/if}
