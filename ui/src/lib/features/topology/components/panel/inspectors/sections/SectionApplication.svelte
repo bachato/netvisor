@@ -9,6 +9,7 @@
 	import { concepts } from '$lib/shared/stores/metadata';
 	import {
 		common_application,
+		common_ungrouped,
 		tags_inheritedFromHost,
 		tags_inheritedOverrideHint,
 		common_overrides,
@@ -86,6 +87,22 @@
 	let appAvailableTags = $derived(
 		hasAppTag ? appTags.filter((t) => selectedAppTagIds.includes(t.id)) : appTags
 	);
+
+	// Bindable dropdown state and local dismissal for the Ungrouped pseudotag.
+	// Clicking X on the pseudotag hides it and opens the picker. If the user closes
+	// the dropdown without picking a tag and the service is still ungrouped, the
+	// pseudotag returns. No flash-guard needed here — TagPickerInline runs in entity
+	// mode and awaits the bulk-add mutation before closing, so `hasAppTag` has
+	// already transitioned by the time `open` flips back to false.
+	let pickerOpen = $state(false);
+	let ungroupedDismissed = $state(false);
+	let showUngroupedPseudo = $derived(!hasAppTag && !ungroupedDismissed);
+
+	$effect(() => {
+		if (!pickerOpen && ungroupedDismissed && !hasAppTag) {
+			ungroupedDismissed = false;
+		}
+	});
 </script>
 
 {#if entityId}
@@ -117,14 +134,32 @@
 					<p class="text-tertiary text-xs">{tags_inheritedOverrideHint()}</p>
 				{/if}
 			{/if}
-			<TagPickerInline
-				selectedTagIds={isAppInherited ? [] : selectedAppTagIds}
-				{entityId}
-				{entityType}
-				disabled={!editState.isEditable}
-				availableTags={isAppInherited ? appTags : appAvailableTags}
-				allowCreate={false}
-			/>
+			<div class="flex flex-wrap items-center gap-1.5">
+				{#if showUngroupedPseudo}
+					<Tag
+						label={common_ungrouped()}
+						color="Gray"
+						icon={concepts.getIconComponent('Application')}
+						isShiny={true}
+						pill={true}
+						removable={editState.isEditable}
+						onRemove={() => {
+							ungroupedDismissed = true;
+							pickerOpen = true;
+						}}
+					/>
+				{/if}
+				<TagPickerInline
+					bind:open={pickerOpen}
+					selectedTagIds={isAppInherited ? [] : selectedAppTagIds}
+					{entityId}
+					{entityType}
+					disabled={!editState.isEditable}
+					availableTags={isAppInherited ? appTags : appAvailableTags}
+					allowCreate={false}
+					hideAddButton={showUngroupedPseudo}
+				/>
+			</div>
 		</div>
 	</div>
 {/if}
