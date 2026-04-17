@@ -12,6 +12,7 @@ use crate::server::{
         services::traits::{CrudService, EventBusService},
         storage::generic::GenericPostgresStorage,
         types::api::ApiError,
+        validation::validate_csp_domain,
     },
     shares::r#impl::base::Share,
 };
@@ -116,6 +117,39 @@ fn verify_token_impl(share: &Share, token: &str) -> Result<(), ApiError> {
     }
 
     Ok(())
+}
+
+/// Build the per-share `frame-ancestors` CSP directive.
+///
+/// - If the org lacks the embed feature, framing is blocked (`'none'`).
+/// - Otherwise, `allowed_domains` (filtered through `validate_csp_domain`)
+///   is used; empty/None means allow all (`*`).
+pub fn build_frame_ancestors(share: &Share, has_embeds_feature: bool) -> String {
+    if !has_embeds_feature {
+        return "frame-ancestors 'none'".to_string();
+    }
+
+    let Some(ref domains) = share.base.allowed_domains else {
+        return "frame-ancestors *".to_string();
+    };
+
+    let safe_domains: Vec<&String> = domains
+        .iter()
+        .filter(|d| validate_csp_domain(d).is_ok())
+        .collect();
+
+    if safe_domains.is_empty() {
+        "frame-ancestors *".to_string()
+    } else {
+        format!(
+            "frame-ancestors {}",
+            safe_domains
+                .iter()
+                .map(|d| d.as_str())
+                .collect::<Vec<_>>()
+                .join(" ")
+        )
+    }
 }
 
 impl ShareService {

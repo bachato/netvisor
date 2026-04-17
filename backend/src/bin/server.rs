@@ -20,6 +20,7 @@ use scanopy::server::{
         cache::AppCache,
         factory::{create_public_share_routes, create_router},
     },
+    shares::handlers::{ShareIndexHtml, share_html_handler},
 };
 use tower::ServiceBuilder;
 use tower_http::{
@@ -335,21 +336,26 @@ async fn main() -> anyhow::Result<()> {
 
     // Public share routes with permissive CORS (embeds on customer domains)
     let (public_share_router, _) = create_public_share_routes().split_for_parts();
-    let mut public_share_app = Router::new()
-        .merge(public_share_router)
-        .with_state(state.clone());
+    let mut public_share_app: Router<Arc<AppState>> = Router::new().merge(public_share_router);
 
-    // Only serve the /embed route without frame-ancestors CSP so it can be embedded in iframes.
-    // Regular /share/{id} pages fall through to protected_app which has frame-ancestors 'self',
-    // preventing unauthorized iframe embedding that would bypass domain validation.
+    // Mount /share/{id} and /share/{id}/embed on the public share app so a
+    // per-share, tight CSP applies to the HTML document. The SPA's
+    // `PasswordGate` and error views still render client-side. Leaving
+    // these to protected_app's fallback ServeDir would ship them with the
+    // global (looser) CSP, so we intercept the HTML here.
     if let Some(static_path) = &web_external_path {
-        public_share_app = public_share_app.route_service(
-            "/share/{id}/embed",
-            ServeFile::new(format!("{}/index.html", static_path.display())),
-        );
+        let index_html = std::fs::read_to_string(format!("{}/index.html", static_path.display()))
+            .expect("index.html must exist when web_external_path is set");
+        let share_index = ShareIndexHtml(Arc::new(index_html));
+
+        public_share_app = public_share_app
+            .route("/share/{id}", axum::routing::get(share_html_handler))
+            .route("/share/{id}/embed", axum::routing::get(share_html_handler))
+            .layer(Extension(share_index));
     }
 
     let public_share_app = public_share_app
+        .with_state(state.clone())
         .layer(public_cors)
         .layer(cache_headers.clone());
 
