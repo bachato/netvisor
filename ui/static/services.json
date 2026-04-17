@@ -74,7 +74,7 @@
   {
     "category": "Development",
     "color": "Red",
-    "description": "Open, extensible, user-friendly interface for AI",
+    "description": "Open, extensible, user-friendly ip_address for AI",
     "discovery_pattern": "Endpoint response body from <ip>:8080/manifest.json contains \"Open WebUI\"",
     "logo_needs_white_background": false,
     "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/open-webui-light.svg",
@@ -443,7 +443,7 @@
   {
     "category": "Telephony",
     "color": "Orange",
-    "description": "PBX web interface",
+    "description": "PBX web ip_address",
     "discovery_pattern": "All of: (Endpoint response body from <ip>:80/ contains \"freepbx\", 5060/tcp is open)",
     "logo_needs_white_background": false,
     "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/freepbx.svg",
@@ -1269,8 +1269,8 @@
     "name": "Cassandra"
   },
   {
-    "category": "Virtualization",
-    "color": "Indigo",
+    "category": "Orchestrator",
+    "color": "Purple",
     "description": "Kubernetes management",
     "discovery_pattern": "Endpoint response body from <ip>:80/v3 contains \"rancher\"",
     "logo_needs_white_background": false,
@@ -1278,8 +1278,8 @@
     "name": "Rancher"
   },
   {
-    "category": "Virtualization",
-    "color": "Indigo",
+    "category": "Hypervisor",
+    "color": "Amber",
     "description": "Open-source virtualization management platform",
     "discovery_pattern": "Any of: (Endpoint response body from <ip>:8006/ contains \"proxmox\", 8006/tcp is open)",
     "logo_needs_white_background": false,
@@ -1287,17 +1287,17 @@
     "name": "Proxmox VE"
   },
   {
-    "category": "Virtualization",
-    "color": "Indigo",
-    "description": "Container management web interface",
+    "category": "Orchestrator",
+    "color": "Purple",
+    "description": "Orchestration platform for Docker, K8s, and Podman",
     "discovery_pattern": "Any of: (Endpoint response body from <ip>:9443/#!/auth contains \"portainer.io\", Endpoint response body from <ip>:9000/ contains \"portainer.io\")",
     "logo_needs_white_background": false,
     "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/portainer.svg",
     "name": "Portainer"
   },
   {
-    "category": "Virtualization",
-    "color": "Indigo",
+    "category": "Orchestrator",
+    "color": "Purple",
     "description": "Enterprise Kubernetes",
     "discovery_pattern": "Endpoint response body from <ip>:6443/healthz contains \"openshift\"",
     "logo_needs_white_background": false,
@@ -1305,8 +1305,8 @@
     "name": "OpenShift"
   },
   {
-    "category": "Virtualization",
-    "color": "Indigo",
+    "category": "Orchestrator",
+    "color": "Purple",
     "description": "Workload orchestration",
     "discovery_pattern": "Endpoint response body from <ip>:4646/v1/status/leader contains \"\"",
     "logo_needs_white_background": false,
@@ -1314,8 +1314,8 @@
     "name": "Nomad"
   },
   {
-    "category": "Virtualization",
-    "color": "Indigo",
+    "category": "Orchestrator",
+    "color": "Purple",
     "description": "Container orchestration platform",
     "discovery_pattern": "All of: (6443/tcp is open, Any of: (10250/tcp is open, 10259/tcp is open, 10257/tcp is open, 10256/tcp is open))",
     "logo_needs_white_background": false,
@@ -1323,8 +1323,8 @@
     "name": "Kubernetes"
   },
   {
-    "category": "Virtualization",
-    "color": "Indigo",
+    "category": "Orchestrator",
+    "color": "Purple",
     "description": "Docker compose stack management UI",
     "discovery_pattern": "Endpoint response body from <ip>:5001/ contains \"Dockge\"",
     "logo_needs_white_background": false,
@@ -1332,8 +1332,8 @@
     "name": "Dockge"
   },
   {
-    "category": "Virtualization",
-    "color": "Indigo",
+    "category": "Orchestrator",
+    "color": "Purple",
     "description": "Docker native clustering and orchestration",
     "discovery_pattern": "All of: (2377/tcp is open, 7946/tcp is open)",
     "logo_needs_white_background": false,
@@ -1341,8 +1341,8 @@
     "name": "Docker Swarm"
   },
   {
-    "category": "Virtualization",
-    "color": "Indigo",
+    "category": "ContainerRuntime",
+    "color": "Blue",
     "description": "Docker",
     "discovery_pattern": "Client probe Docker succeeded",
     "logo_needs_white_background": false,
@@ -1350,12 +1350,12 @@
     "name": "Docker"
   },
   {
-    "category": "Virtualization",
-    "color": "Indigo",
+    "category": "Container",
+    "color": "Blue",
     "description": "A generic docker container",
     "discovery_pattern": "All of: (Service is running in a docker container, A custom match pattern evaluated at runtime)",
     "logo_needs_white_background": false,
-    "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/docker.svg",
+    "logo_url": "",
     "name": "Docker Container"
   },
   {
@@ -1757,7 +1757,7 @@
   {
     "category": "ReverseProxy",
     "color": "Cyan",
-    "description": "Web-based Nginx proxy management interface",
+    "description": "Web-based Nginx proxy management ip_address",
     "discovery_pattern": "Endpoint response body from <ip>:80 contains \"nginx proxy manager\"",
     "logo_needs_white_background": false,
     "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/nginx-proxy-manager.svg",
@@ -1829,7 +1829,7 @@
   {
     "category": "DNS",
     "color": "Emerald",
-    "description": "Recursive DNS resolver with control interface",
+    "description": "Recursive DNS resolver with control ip_address",
     "discovery_pattern": "All of: (53/udp is open, 8953/tcp is open)",
     "logo_needs_white_background": false,
     "logo_url": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/unbound.svg",
@@ -1863,7 +1863,7 @@
     "name": "Bind9"
   },
   {
-    "category": "NetworkSecurity",
+    "category": "NetworkAppliance",
     "color": "Red",
     "description": "Open-source firewall and router platform",
     "discovery_pattern": "All of: (22/tcp is open, Endpoint response body from <ip>:80/ contains \"pfsense\")",
@@ -1881,7 +1881,7 @@
     "name": "pfBlockerNG"
   },
   {
-    "category": "NetworkSecurity",
+    "category": "NetworkAppliance",
     "color": "Red",
     "description": "Open-source firewall and routing platform",
     "discovery_pattern": "All of: (Any of: (Endpoint response body from <ip>:80/ contains \"opnsense\", Endpoint response body from <ip>:443/ contains \"opnsense\"), Any of: (53/tcp is open, 53/udp is open, 22/tcp is open, 123/udp is open, 67/udp is open))",
@@ -1890,7 +1890,7 @@
     "name": "OPNsense"
   },
   {
-    "category": "NetworkSecurity",
+    "category": "NetworkAppliance",
     "color": "Red",
     "description": "Fortinet security appliance",
     "discovery_pattern": "Endpoint response body from <ip>:80/login contains \"fortinet\"",
@@ -1899,7 +1899,7 @@
     "name": "Fortinet"
   },
   {
-    "category": "NetworkSecurity",
+    "category": "NetworkAppliance",
     "color": "Red",
     "description": "Generic network security appliance",
     "discovery_pattern": "No match pattern provided",
@@ -1908,8 +1908,8 @@
     "name": "Firewall"
   },
   {
-    "category": "NetworkSecurity",
-    "color": "Red",
+    "category": "Monitoring",
+    "color": "Orange",
     "description": "Crowdsourced protection against malicious IPs",
     "discovery_pattern": "Endpoint response status is between 401 and 401, and response body from <ip>:8080/v1/allowlists contains \"cookie token is empty\"",
     "logo_needs_white_background": false,
@@ -1953,8 +1953,8 @@
     "name": "TP-Link EAP"
   },
   {
-    "category": "NetworkCore",
-    "color": "Yellow",
+    "category": "NetworkAppliance",
+    "color": "Red",
     "description": "MikroTik RouterOS network device",
     "discovery_pattern": "Endpoint response body from <ip>:80/ contains \"MikroTik RouterOS\"",
     "logo_needs_white_background": false,
@@ -2025,8 +2025,8 @@
     "name": "Access Point"
   },
   {
-    "category": "NetworkCore",
-    "color": "Yellow",
+    "category": "RemoteAccess",
+    "color": "Amber",
     "description": "Telnet remote access",
     "discovery_pattern": "23/tcp is open",
     "logo_needs_white_background": false,
@@ -2043,8 +2043,8 @@
     "name": "Switch"
   },
   {
-    "category": "NetworkCore",
-    "color": "Yellow",
+    "category": "RemoteAccess",
+    "color": "Amber",
     "description": "Secure Shell remote access",
     "discovery_pattern": "22/tcp is open",
     "logo_needs_white_background": false,
@@ -2052,8 +2052,8 @@
     "name": "SSH"
   },
   {
-    "category": "SNMP",
-    "color": "Pink",
+    "category": "NetworkCore",
+    "color": "Yellow",
     "description": "Simple Network Management Protocol",
     "discovery_pattern": "Client probe Snmp succeeded",
     "logo_needs_white_background": false,
@@ -2061,8 +2061,8 @@
     "name": "SNMP"
   },
   {
-    "category": "NetworkCore",
-    "color": "Yellow",
+    "category": "Development",
+    "color": "Red",
     "description": "A Salt Proxy server acts as a proxy between the Salt Master and the minions.",
     "discovery_pattern": "All of: (4505/tcp is open, 4506/tcp is open, 8022/tcp is open)",
     "logo_needs_white_background": false,
@@ -2070,8 +2070,8 @@
     "name": "Salt Proxy"
   },
   {
-    "category": "NetworkCore",
-    "color": "Yellow",
+    "category": "Development",
+    "color": "Red",
     "description": "A Salt master server acts as a central control bus for the clients, which are called minions.",
     "discovery_pattern": "All of: (4505/tcp is open, 4506/tcp is open, Not (8022/tcp is open))",
     "logo_needs_white_background": false,
@@ -2079,8 +2079,8 @@
     "name": "Salt Master"
   },
   {
-    "category": "NetworkCore",
-    "color": "Yellow",
+    "category": "RemoteAccess",
+    "color": "Amber",
     "description": "Remote Desktop Protocol (RDP)",
     "discovery_pattern": "3389/tcp is open",
     "logo_needs_white_background": false,
