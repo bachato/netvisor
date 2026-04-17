@@ -156,7 +156,7 @@
     "description": "Services, VMs, and containers per host",
     "category": null,
     "icon": "boxes",
-    "color": "Amber",
+    "color": "Orange",
     "metadata": {
       "edge_view_configs": {
         "ContainerRuntime": {

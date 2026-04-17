@@ -109,7 +109,7 @@
     "description": "Physical network device",
     "category": null,
     "icon": "cable",
-    "color": "Amber",
+    "color": "Emerald",
     "metadata": {
       "collapsed_by_default": false,
       "collapsed_size": {
@@ -187,7 +187,7 @@
     "description": "VMs grouped by hypervisor",
     "category": null,
     "icon": "monitor-cog",
-    "color": "Orange",
+    "color": "Amber",
     "metadata": {
       "collapsed_by_default": false,
       "collapsed_size": {

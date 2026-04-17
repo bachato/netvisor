@@ -45,7 +45,7 @@
     "description": "Group VMs by hypervisor",
     "category": null,
     "icon": "monitor-cog",
-    "color": "Orange",
+    "color": "Amber",
     "metadata": {
       "allow_multiple": false,
       "is_configurable": false,

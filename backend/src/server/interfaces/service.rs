@@ -217,11 +217,33 @@ impl InterfaceService {
     async fn find_matching_existing(&self, entry: &Interface) -> Result<Option<Interface>> {
         let host_id = entry.base.host_id;
 
+        tracing::debug!(
+            host_id = %host_id,
+            incoming_if_index = entry.base.if_index,
+            incoming_if_name = ?entry.base.if_name,
+            incoming_mac = ?entry.base.mac_address,
+            "InterfaceService::find_matching_existing: start"
+        );
+
         // Tier 1: (host_id, if_name) — strong identifier when present
-        if let Some(ref if_name) = entry.base.if_name
-            && let Some(found) = self.get_by_host_and_name(&host_id, if_name).await?
-        {
-            return Ok(Some(found));
+        if let Some(ref if_name) = entry.base.if_name {
+            let found = self.get_by_host_and_name(&host_id, if_name).await?;
+            tracing::debug!(
+                host_id = %host_id,
+                incoming_if_name = %if_name,
+                matched = found.is_some(),
+                matched_id = ?found.as_ref().map(|f| f.id),
+                matched_if_index = ?found.as_ref().map(|f| f.base.if_index),
+                "InterfaceService tier-1 lookup (host, if_name)"
+            );
+            if let Some(found) = found {
+                return Ok(Some(found));
+            }
+        } else {
+            tracing::debug!(
+                host_id = %host_id,
+                "InterfaceService tier-1 skipped: incoming if_name is None"
+            );
         }
 
         // Load host's interfaces once for tiers 2 + 3
@@ -232,6 +254,12 @@ impl InterfaceService {
             .iter()
             .find(|e| e.base.if_index == entry.base.if_index)
         {
+            tracing::debug!(
+                host_id = %host_id,
+                incoming_if_index = entry.base.if_index,
+                matched_id = %found.id,
+                "InterfaceService tier-2 matched on if_index"
+            );
             return Ok(Some(found.clone()));
         }
 
@@ -243,10 +271,21 @@ impl InterfaceService {
             if let Some(first) = candidates.next()
                 && candidates.next().is_none()
             {
+                tracing::debug!(
+                    host_id = %host_id,
+                    matched_id = %first.id,
+                    "InterfaceService tier-3 matched on mac_address"
+                );
                 return Ok(Some(first.clone()));
             }
         }
 
+        tracing::debug!(
+            host_id = %host_id,
+            incoming_if_index = entry.base.if_index,
+            incoming_if_name = ?entry.base.if_name,
+            "InterfaceService: no tier match, will create new row"
+        );
         Ok(None)
     }
 }

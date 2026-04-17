@@ -34,7 +34,6 @@ pub enum Concept {
     L2,
     L3,
     Application,
-    Compute,
 }
 
 impl HasId for Concept {
@@ -52,14 +51,16 @@ impl EntityMetadataProvider for Concept {
             Concept::ReverseProxy => Color::Cyan,
             Concept::IoT => Color::Yellow,
             Concept::Storage => Color::Green,
-            Concept::Virtualization => Color::Orange,
-            Concept::Containerization => Color::Blue,
-            Concept::Workloads => Color::Amber,
             Concept::SNMP => Color::Pink,
+
             Concept::L2 => Color::Green,
             Concept::L3 => Color::Blue,
+
+            Concept::Workloads => Color::Orange,
+            Concept::Virtualization => Color::Amber,
+            Concept::Containerization => Color::Blue,
+
             Concept::Application => Color::Purple,
-            Concept::Compute => Color::Orange,
         }
     }
 
@@ -71,14 +72,16 @@ impl EntityMetadataProvider for Concept {
             Concept::ReverseProxy => Icon::Split,
             Concept::IoT => Icon::CircuitBoard,
             Concept::Storage => Icon::HardDrive,
-            Concept::Virtualization => Icon::MonitorCog,
-            Concept::Containerization => Icon::Box,
-            Concept::Workloads => Icon::Boxes,
             Concept::SNMP => Icon::Activity,
+
             Concept::L2 => Icon::Cable,
             Concept::L3 => Icon::Signpost,
+
+            Concept::Workloads => Icon::Boxes,
+            Concept::Virtualization => Icon::MonitorCog,
+            Concept::Containerization => Icon::Box,
+
             Concept::Application => Icon::Workflow,
-            Concept::Compute => Icon::Cpu,
         }
     }
 }

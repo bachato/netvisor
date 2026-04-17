@@ -273,27 +273,32 @@ impl EntityMetadataProvider for EntityDiscriminants {
     fn color(&self) -> Color {
         match self {
             EntityDiscriminants::Organization => Color::Blue,
-            EntityDiscriminants::Network => Color::Gray,
-            EntityDiscriminants::Daemon => Color::Green,
-            EntityDiscriminants::Discovery => Color::Green,
-            EntityDiscriminants::DaemonApiKey => Color::Yellow,
-            EntityDiscriminants::UserApiKey => Color::Yellow,
-            EntityDiscriminants::Credential => Color::Pink,
+            EntityDiscriminants::Network => Color::Blue,
             EntityDiscriminants::User => Color::Blue,
-            EntityDiscriminants::Invite => Color::Green,
-            EntityDiscriminants::Share => Color::Teal,
+            EntityDiscriminants::Invite => Color::Sky,
+
             EntityDiscriminants::Tag => Color::Yellow,
 
-            EntityDiscriminants::Dependency => Color::Rose,
+            EntityDiscriminants::Daemon => Color::Green,
+            EntityDiscriminants::Discovery => Color::Green,
+
+            EntityDiscriminants::DaemonApiKey => Color::Yellow,
+            EntityDiscriminants::UserApiKey => Color::Yellow,
+            EntityDiscriminants::Credential => Color::Yellow,
+
             EntityDiscriminants::Topology => Color::Pink,
+            EntityDiscriminants::Share => Color::Pink,
+
+            EntityDiscriminants::Dependency => Color::Rose,
             EntityDiscriminants::Service => Color::Fuchsia,
 
-            EntityDiscriminants::Host => Color::Amber,
+            EntityDiscriminants::Host => Color::Blue,
 
-            EntityDiscriminants::IPAddress => Color::Blue,
+            EntityDiscriminants::Interface => Color::Teal,
+            EntityDiscriminants::IPAddress => Color::Emerald,
             EntityDiscriminants::Port => Color::Sky,
             EntityDiscriminants::Binding => Color::Cyan,
-            EntityDiscriminants::Interface => Color::Teal,
+
             EntityDiscriminants::Subnet => Color::Indigo,
             EntityDiscriminants::Vlan => Color::Violet,
 

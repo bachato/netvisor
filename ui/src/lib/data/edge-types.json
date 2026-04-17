@@ -5,7 +5,7 @@
     "description": null,
     "category": null,
     "icon": "server",
-    "color": "Amber",
+    "color": "Emerald",
     "metadata": {
       "edge_style": "Bezier",
       "has_end_marker": false,
@@ -21,7 +21,7 @@
     "description": null,
     "category": null,
     "icon": "monitor-cog",
-    "color": "Orange",
+    "color": "Amber",
     "metadata": {
       "edge_style": "Bezier",
       "has_end_marker": false,
