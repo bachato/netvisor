@@ -58,6 +58,23 @@
 	let textColor = $derived(colorHelper?.text ?? '');
 
 	let unknownClasses = 'bg-gray-200 text-gray-600 dark:bg-gray-600 dark:text-gray-300';
+
+	// Overflow detection: the tag-truncate mask should only fade the trailing
+	// edge when the label actually doesn't fit. Without this, short labels get
+	// visibly faded at their tail end, making them look cut off when they fit.
+	let labelEl: HTMLSpanElement | undefined = $state();
+	let isOverflowing = $state(false);
+	$effect(() => {
+		if (!truncate || !labelEl) return;
+		const el = labelEl;
+		const check = () => {
+			isOverflowing = el.scrollWidth - el.clientWidth > 1;
+		};
+		check();
+		const ro = new ResizeObserver(check);
+		ro.observe(el);
+		return () => ro.disconnect();
+	});
 </script>
 
 {#snippet content()}
@@ -67,14 +84,14 @@
 			: 'rounded'} px-2 py-0.5 text-xs font-medium
 		{isUnknown ? unknownClasses : disabled ? 'text-tertiary bg-gray-700/30' : `${bgColor} ${textColor}`}
 		{isShiny ? 'tag-shiny' : ''}
-		{truncate ? 'tag-truncate' : ''}"
+		{truncate && isOverflowing ? 'tag-truncate' : ''}"
 	>
 		{#if icon}
 			{@const Icon = icon}
 			<Icon size={16} class="{textColor} flex-shrink-0" />
 		{/if}
 
-		<span class="truncate">{label ?? common_unknown()}</span>
+		<span bind:this={labelEl} class="truncate">{label ?? common_unknown()}</span>
 		{#if badge.length > 0}
 			<span class="flex-shrink-0 {textColor}">{badge}</span>
 		{/if}

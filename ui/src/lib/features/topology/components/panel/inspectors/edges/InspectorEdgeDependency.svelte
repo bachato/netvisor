@@ -149,7 +149,9 @@
 
 	// Edit: push the dep's member services into the canvas selection, clear the
 	// edge selection, and set the editingDependencyId store so the panel routes
-	// to InspectorMultiSelect in edit mode.
+	// to InspectorMultiSelect in edit mode. Set editingDependencyId BEFORE clearing
+	// selectedEdge so the panel switches away from InspectorEdge synchronously —
+	// otherwise InspectorEdge briefly re-evaluates with a null edge and throws.
 	function startEditing() {
 		if (!group || !topology) return;
 		const serviceIds =
@@ -159,20 +161,23 @@
 						.map((bid) => topology!.services.find((s) => s.bindings.some((b) => b.id === bid))?.id)
 						.filter((id): id is string => !!id);
 
-		// Find the rendered nodes for those services. Service element nodes use the
-		// service ID as their node ID.
-		const serviceNodes = serviceIds
+		// Wrap each TopologyNode as an xyflow Node with data pointing back to the
+		// TopologyNode — same shape the canvas puts into selectedNodes.
+		const serviceNodes: import('@xyflow/svelte').Node[] = serviceIds
 			.map((sid) => topology!.nodes.find((n) => n.id === sid))
 			.filter((n): n is NonNullable<typeof n> => !!n)
-			// Svelte Flow's Node type expects `position` etc — our topology nodes already
-			// carry those. Cast via unknown to avoid a type war over two shapes that match.
-			.map((n) => n as unknown as import('@xyflow/svelte').Node);
+			.map((n) => ({
+				id: n.id,
+				type: n.node_type,
+				position: n.position,
+				data: n
+			}));
 
+		editingDependencyId.set(group.id);
 		if (serviceNodes.length > 0) {
 			selectedNodes.set(serviceNodes);
 		}
 		selectedEdge.set(null);
-		editingDependencyId.set(group.id);
 	}
 
 	// Context for group display with description

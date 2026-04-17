@@ -27,25 +27,22 @@
 		<InspectorEdgeAggregated edges={originalEdges} />
 	{:else if edgeData.edge_type === 'HubAndSpoke' || edgeData.edge_type === 'RequestPath'}
 		<InspectorEdgeDependency
-			dependencyId={edgeData.dependency_id}
-			sourceId={edgeData.source_id}
-			targetId={edgeData.target_id}
+			dependencyId={edgeData?.dependency_id}
+			sourceId={edgeData?.source_id}
+			targetId={edgeData?.target_id}
 			{view}
 		/>
 	{:else if edgeData.edge_type === 'SameHost'}
-		<InspectorEdgeIPAddress {edge} hostId={edgeData.host_id} {view} />
+		<InspectorEdgeIPAddress {edge} hostId={edgeData?.host_id} {view} />
 	{:else if edgeData.edge_type === 'Hypervisor'}
-		<InspectorEdgeHypervisor {edge} hypervisorServiceId={edgeData.hypervisor_service_id} />
+		<InspectorEdgeHypervisor {edge} hypervisorServiceId={edgeData?.hypervisor_service_id} />
 	{:else if edgeData.edge_type === 'ContainerRuntime'}
-		<InspectorEdgeContainerRuntime
-			{edge}
-			serviceId={edgeData.service_id}
-		/>
+		<InspectorEdgeContainerRuntime {edge} serviceId={edgeData?.service_id} />
 	{:else if edgeData.edge_type === 'PhysicalLink'}
 		<InspectorEdgePhysicalLink
-			sourceEntityId={edgeData.source_entity_id}
-			targetEntityId={edgeData.target_entity_id}
-			protocol={edgeData.protocol}
+			sourceEntityId={edgeData?.source_entity_id}
+			targetEntityId={edgeData?.target_entity_id}
+			protocol={edgeData?.protocol}
 		/>
 	{:else}
 		<div class="space-y-3">
