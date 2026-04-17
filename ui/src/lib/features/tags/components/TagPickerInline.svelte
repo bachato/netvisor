@@ -39,7 +39,9 @@
 		// When true, tags created inline will have is_application set
 		createAsApplication = false,
 		// When false, hides the inline tag creation option
-		allowCreate = true
+		allowCreate = true,
+		// Bindable: set to true to programmatically open the dropdown
+		open = $bindable(false)
 	}: {
 		selectedTagIds?: string[];
 		disabled?: boolean;
@@ -50,6 +52,7 @@
 		availableTags?: import('$lib/features/tags/types/base').Tag[];
 		createAsApplication?: boolean;
 		allowCreate?: boolean;
+		open?: boolean;
 	} = $props();
 
 	// Entity mode: use generic mutations
@@ -262,6 +265,16 @@
 		// Focus input after dropdown opens
 		setTimeout(() => inputElement?.focus(), 0);
 	}
+
+	// Open when parent sets the bindable `open` prop to true, then reset so it can fire again.
+	$effect(() => {
+		if (open && !disabled) {
+			isDropdownOpen = true;
+			calculatePosition();
+			setTimeout(() => inputElement?.focus(), 0);
+			open = false;
+		}
+	});
 </script>
 
 <div class="flex min-w-0 flex-wrap items-center gap-1 overflow-hidden">

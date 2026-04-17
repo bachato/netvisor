@@ -381,10 +381,11 @@ export const dependencyTypes = createTypeMetadataHelpers<
 	'dependency_types',
 	DependencyTypeMetadata
 >('dependency_types');
-interface EntityParentMetadata {
+interface EntityTypeMetadata {
 	parent_entity?: string;
+	is_taggable?: boolean;
 }
-export const entities = createTypeMetadataHelpers<'entities', EntityParentMetadata>('entities');
+export const entities = createTypeMetadataHelpers<'entities', EntityTypeMetadata>('entities');
 export const ports = createTypeMetadataHelpers<'ports', PortTypeMetadata>('ports');
 export const discoveryTypes = createTypeMetadataHelpers<'discovery_types', DiscoveryTypeMetadata>(
 	'discovery_types'

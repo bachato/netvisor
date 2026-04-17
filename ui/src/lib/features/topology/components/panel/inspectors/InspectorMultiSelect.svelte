@@ -17,6 +17,7 @@
 	import {
 		getNodeSelectionIds,
 		resolveDependencyTargets,
+		resolveTagTarget,
 		type DependencyTarget
 	} from '../../../resolvers';
 	import type { DependencyType, EdgeStyle } from '$lib/features/dependencies/types/base';
@@ -38,7 +39,7 @@
 	import type { Dependency } from '$lib/features/dependencies/types/base';
 	import EdgeStyleForm from '$lib/features/dependencies/components/DependencyEditModal/EdgeStyleForm.svelte';
 	import { computeOptimalHandles } from '../../../layout/elk-layout';
-	import { dependencyTypes, concepts, views } from '$lib/shared/stores/metadata';
+	import { dependencyTypes, concepts, views, entities } from '$lib/shared/stores/metadata';
 	import { getInspectorConfig } from './view-config';
 	import DependencyTargetCard from './shared/DependencyTargetCard.svelte';
 	import SegmentedControl from '$lib/shared/components/forms/SegmentedControl.svelte';
@@ -78,7 +79,8 @@
 		tags_inheritedOverrideHint,
 		inspector_createGroupingRuleFromTag,
 		topology_tutorialDone,
-		appWizard_applicationTags
+		common_application,
+		common_ungrouped
 	} from '$lib/paraglide/messages';
 
 	let {
@@ -134,10 +136,6 @@
 		return { hostIds: [...hostSet], serviceIds: [...serviceSet] };
 	});
 
-	let selectedHostIds = $derived(selectionIds.hostIds);
-	let selectedHosts = $derived(
-		topology ? topology.hosts.filter((h) => selectedHostIds.includes(h.id)) : []
-	);
 	let selectedServiceIds = $derived(selectionIds.serviceIds);
 	let selectedServices = $derived(
 		topology ? topology.services.filter((s) => selectedServiceIds.includes(s.id)) : []
@@ -152,14 +150,49 @@
 		return (viewMeta?.element_label as string) ?? 'elements';
 	});
 
-	// Tag entity type — fixed by view config (no user toggle)
-	let tagEntityType = $derived(inspectorConfig.bulk_tag_entity as 'Host' | 'Service');
+	// Group selected nodes by their resolved taggable entity type. Each group drives
+	// its own tag picker. IPAddress/Interface elements resolve to Host via parent_entity;
+	// Service/Host elements resolve to themselves.
+	interface TagGroup {
+		entityType: 'Host' | 'Service';
+		entityIds: string[];
+		entities: Array<{ id: string; tags: string[] }>;
+		commonTags: string[];
+		label: string;
+	}
 
-	let tagEntityIds = $derived(tagEntityType === 'Host' ? selectedHostIds : selectedServiceIds);
-	let tagEntities = $derived(tagEntityType === 'Host' ? selectedHosts : selectedServices);
-
-	// Common tags across selected entities
-	let commonTags = $derived(computeCommonTags(tagEntities));
+	let tagGroups = $derived.by((): TagGroup[] => {
+		if (!topology) return [];
+		const byType = new Map<'Host' | 'Service', Set<string>>();
+		for (const node of nodes) {
+			const data = node.data as TopologyNode | undefined;
+			if (!data) continue;
+			const target = resolveTagTarget(node.id, data);
+			if (!target) continue;
+			let set = byType.get(target.entityType);
+			if (!set) {
+				set = new Set();
+				byType.set(target.entityType, set);
+			}
+			set.add(target.entityId);
+		}
+		const groups: TagGroup[] = [];
+		for (const entityType of ['Host', 'Service'] as const) {
+			const ids = byType.get(entityType);
+			if (!ids || ids.size === 0) continue;
+			const idArr = [...ids];
+			const source = entityType === 'Host' ? topology.hosts : topology.services;
+			const entityList = source.filter((e) => idArr.includes(e.id));
+			groups.push({
+				entityType,
+				entityIds: idArr,
+				entities: entityList,
+				commonTags: computeCommonTags(entityList),
+				label: tags_entityTags({ entity: entities.getName(entityType) })
+			});
+		}
+		return groups;
+	});
 
 	// Unified edit state — tutorial mode always allows edits
 	let editState = $derived(
@@ -192,8 +225,11 @@
 	let nonAppTags = $derived(topoEntityTags.filter((t) => !t.is_application));
 	let appTags = $derived(topoEntityTags.filter((t) => t.is_application));
 
-	// Common app tags across selected entities (for app picker selectedTagIds)
-	let commonAppTags = $derived(commonTags.filter((id) => appTagSet.has(id)));
+	// Common app tags across selected services (for app picker selectedTagIds).
+	// Always derived from services — app-group tagging only applies to services.
+	let commonAppTags = $derived(
+		computeCommonTags(selectedServices).filter((id) => appTagSet.has(id))
+	);
 	let hasAppTag = $derived(commonAppTags.length > 0);
 
 	// App-group available tags: if already tagged, only show current tag (for removal)
@@ -254,36 +290,47 @@
 		return topoEntityTags.find((t) => t.id === appState.tagId) ?? null;
 	});
 
-	// Tag handlers — mutation onSuccess handles cache updates optimistically
-	async function handleAddTag(tagId: string) {
-		await bulkAddTagMutation.mutateAsync({
-			entity_ids: tagEntityIds,
-			entity_type: tagEntityType,
-			tag_id: tagId
-		});
-	}
-
-	async function handleRemoveTag(tagId: string) {
-		await bulkRemoveTagMutation.mutateAsync({
-			entity_ids: tagEntityIds,
-			entity_type: tagEntityType,
-			tag_id: tagId
-		});
-	}
-
 	// Track recently added non-app tags for "create grouping rule" action
 	let recentlyAddedTagIds = $state<string[]>([]);
 
-	async function handleAddTagWithTracking(tagId: string) {
-		await handleAddTag(tagId);
-		// Only track non-app tags for grouping rule creation
+	// Per-group tag handlers — one picker per TagGroup drives these with its own entityType/ids.
+	// Mutation onSuccess handles cache updates optimistically.
+	async function handleAddTagForGroup(group: TagGroup, tagId: string) {
+		await bulkAddTagMutation.mutateAsync({
+			entity_ids: group.entityIds,
+			entity_type: group.entityType,
+			tag_id: tagId
+		});
 		recentlyAddedTagIds = [...recentlyAddedTagIds, tagId];
 	}
 
-	// App-group tag handler (no grouping rule tracking)
-	async function handleAddAppTag(tagId: string) {
-		await handleAddTag(tagId);
+	async function handleRemoveTagForGroup(group: TagGroup, tagId: string) {
+		await bulkRemoveTagMutation.mutateAsync({
+			entity_ids: group.entityIds,
+			entity_type: group.entityType,
+			tag_id: tagId
+		});
 	}
+
+	// App-group tag handlers — always target the selected services. No rule tracking.
+	async function handleAddAppTag(tagId: string) {
+		await bulkAddTagMutation.mutateAsync({
+			entity_ids: selectedServiceIds,
+			entity_type: 'Service',
+			tag_id: tagId
+		});
+	}
+
+	async function handleRemoveAppTag(tagId: string) {
+		await bulkRemoveTagMutation.mutateAsync({
+			entity_ids: selectedServiceIds,
+			entity_type: 'Service',
+			tag_id: tagId
+		});
+	}
+
+	// Bindable flag to programmatically open the app-tag picker from the Ungrouped pseudotag.
+	let appPickerOpen = $state(false);
 
 	// Check if a ByTag rule already exists covering the recently added tags
 	let existingRuleCoversRecentTags = $derived.by(() => {
@@ -765,41 +812,41 @@
 
 	{#if editState.isEditable}
 		{#if !isTutorial}
-			<!-- Tags section -->
-			<div class="space-y-2">
-				<span class="text-secondary block text-sm font-medium"
-					>{tags_entityTags({ entity: tagEntityType })}</span
-				>
-				<div class="card card-static space-y-2 p-2">
-					<div class="flex items-center gap-1.5">
-						<TagPickerInline
-							selectedTagIds={commonTags.filter((id) => !appTagSet.has(id))}
-							onAdd={handleAddTagWithTracking}
-							onRemove={handleRemoveTag}
-							availableTags={nonAppTags}
-						/>
+			<!-- Tags sections — one per resolved taggable entity type in the selection -->
+			{#each tagGroups as group (group.entityType)}
+				<div class="space-y-2">
+					<span class="text-secondary block text-sm font-medium">{group.label}</span>
+					<div class="card card-static space-y-2 p-2">
+						<div class="flex items-center gap-1.5">
+							<TagPickerInline
+								selectedTagIds={group.commonTags.filter((id) => !appTagSet.has(id))}
+								onAdd={(tagId) => handleAddTagForGroup(group, tagId)}
+								onRemove={(tagId) => handleRemoveTagForGroup(group, tagId)}
+								availableTags={nonAppTags}
+							/>
+						</div>
 					</div>
-					{#if recentlyAddedTagIds.length > 0 && !existingRuleCoversRecentTags}
-						<button
-							class="btn-secondary flex w-full items-center justify-center gap-1.5 text-xs"
-							onclick={() => createGroupingRuleFromTags(recentlyAddedTagIds)}
-						>
-							<span>{inspector_createGroupingRuleFromTag()}</span>
-							{#each recentlyAddedTags as tag (tag?.id)}
-								{#if tag}
-									<Tag label={tag.name} color={tag.color} />
-								{/if}
-							{/each}
-						</button>
-					{/if}
 				</div>
-			</div>
+			{/each}
+
+			{#if recentlyAddedTagIds.length > 0 && !existingRuleCoversRecentTags}
+				<button
+					class="btn-secondary flex w-full items-center justify-center gap-1.5 text-xs"
+					onclick={() => createGroupingRuleFromTags(recentlyAddedTagIds)}
+				>
+					<span>{inspector_createGroupingRuleFromTag()}</span>
+					{#each recentlyAddedTags as tag (tag?.id)}
+						{#if tag}
+							<Tag label={tag.name} color={tag.color} />
+						{/if}
+					{/each}
+				</button>
+			{/if}
 
 			{#if inspectorConfig.show_application_picker}
 				<!-- App-group tag picker — with cross-group and inheritance awareness -->
 				<div class="space-y-2">
-					<span class="text-secondary block text-sm font-medium">{appWizard_applicationTags()}</span
-					>
+					<span class="text-secondary block text-sm font-medium">{common_application()}</span>
 					<div class="card card-static space-y-2 p-2">
 						{#if appState.type === 'cross-group'}
 							<p class="text-tertiary text-xs">{tags_crossGroupSelectionHint()}</p>
@@ -816,13 +863,27 @@
 								</div>
 								<p class="text-tertiary text-xs">{tags_inheritedOverrideHint()}</p>
 							{/if}
-							<TagPickerInline
-								selectedTagIds={commonAppTags}
-								onAdd={handleAddAppTag}
-								onRemove={handleRemoveTag}
-								availableTags={appAvailableTags}
-								allowCreate={false}
-							/>
+							<div class="flex flex-wrap items-center gap-1.5">
+								{#if appState.type === 'ungrouped'}
+									<Tag
+										label={common_ungrouped()}
+										color="Gray"
+										icon={concepts.getIconComponent('Application')}
+										isShiny={true}
+										pill={true}
+										removable={true}
+										onRemove={() => (appPickerOpen = true)}
+									/>
+								{/if}
+								<TagPickerInline
+									bind:open={appPickerOpen}
+									selectedTagIds={commonAppTags}
+									onAdd={handleAddAppTag}
+									onRemove={handleRemoveAppTag}
+									availableTags={appAvailableTags}
+									allowCreate={false}
+								/>
+							</div>
 						{/if}
 					</div>
 				</div>

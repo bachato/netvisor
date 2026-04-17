@@ -49,7 +49,6 @@
       "element_label": "interfaces",
       "element_label_singular": "interface",
       "inspector_config": {
-        "bulk_tag_entity": "Host",
         "container_sections": [
           "Identity",
           "ElementSummary"
@@ -139,7 +138,6 @@
       "element_label": "host IP addresses",
       "element_label_singular": "host IP address",
       "inspector_config": {
-        "bulk_tag_entity": "Subnet",
         "container_sections": [
           "SubnetDetail",
           "ElementSummary"
@@ -213,7 +211,6 @@
       "element_label": "workloads",
       "element_label_singular": "workload",
       "inspector_config": {
-        "bulk_tag_entity": "Host",
         "container_sections": [
           "Identity",
           "ElementSummary"
@@ -286,7 +283,6 @@
       "element_label": "services",
       "element_label_singular": "service",
       "inspector_config": {
-        "bulk_tag_entity": "Service",
         "container_sections": [
           "Identity",
           "ElementSummary",

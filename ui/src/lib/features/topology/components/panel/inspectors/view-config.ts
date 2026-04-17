@@ -43,7 +43,6 @@ export type InspectorSection =
 export interface ViewInspectorConfig {
 	element_sections: InspectorSection[];
 	container_sections: InspectorSection[];
-	bulk_tag_entity: string;
 	dependency_creation: string | null;
 	show_application_picker: boolean;
 }
@@ -83,7 +82,6 @@ export function getInspectorConfig(viewId: string): ViewInspectorConfig {
 	return {
 		element_sections: ['Identity', 'Tags'],
 		container_sections: ['Identity'],
-		bulk_tag_entity: 'Host',
 		dependency_creation: null,
 		show_application_picker: false
 	};

@@ -1,5 +1,6 @@
 import type { components } from '$lib/api/schema';
 import type { Topology, TopologyNode } from './types/base';
+import { entities } from '$lib/shared/stores/metadata';
 
 type ElementEntityType = components['schemas']['ElementEntityType'];
 type ElementEntityTypeDiscriminant = ElementEntityType['element_type'];
@@ -284,6 +285,33 @@ export function resolveDependencyTargets(
 	}
 
 	return targets;
+}
+
+// Resolve the taggable entity behind an element node. Walks the element_type's
+// parent_entity chain (per entity metadata) until an is_taggable entity is reached.
+// Returns null for containers, unknown elements, or chains with no taggable ancestor.
+export interface TagTarget {
+	entityType: 'Host' | 'Service';
+	entityId: string;
+}
+
+export function resolveTagTarget(nodeId: string, node: TopologyNode): TagTarget | null {
+	if (node.node_type !== 'Element') return null;
+	const elementType = node.element_type;
+	if (!elementType) return null;
+	const hostId = 'host_id' in node ? (node.host_id as string | undefined) : undefined;
+
+	let type: string | undefined = elementType;
+	while (type) {
+		const meta = entities.getMetadata(type);
+		if (meta.is_taggable) {
+			if (type === 'Host') return hostId ? { entityType: 'Host', entityId: hostId } : null;
+			if (type === 'Service') return { entityType: 'Service', entityId: nodeId };
+			return null;
+		}
+		type = meta.parent_entity;
+	}
+	return null;
 }
 
 // Selection context for multi-select operations

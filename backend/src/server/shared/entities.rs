@@ -207,10 +207,15 @@ impl TypeMetadataProvider for EntityDiscriminants {
     }
 
     fn metadata(&self) -> serde_json::Value {
-        match self.parent_entity() {
-            Some(parent) => serde_json::json!({ "parent_entity": parent }),
-            None => serde_json::json!({}),
+        let mut m = serde_json::Map::new();
+        if let Some(parent) = self.parent_entity() {
+            m.insert("parent_entity".to_string(), serde_json::json!(parent));
         }
+        m.insert(
+            "is_taggable".to_string(),
+            serde_json::json!(is_entity_taggable(*self)),
+        );
+        serde_json::Value::Object(m)
     }
 }
 

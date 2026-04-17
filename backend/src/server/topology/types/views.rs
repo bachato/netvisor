@@ -122,7 +122,6 @@ pub enum InspectorSection {
 pub struct ViewInspectorConfig {
     pub element_sections: Vec<InspectorSection>,
     pub container_sections: Vec<InspectorSection>,
-    pub bulk_tag_entity: EntityDiscriminants,
     pub dependency_creation: Option<DependencyMemberType>,
     pub show_application_picker: bool,
 }
@@ -301,11 +300,6 @@ impl TopologyView {
 
     /// Inspector panel configuration for this view
     pub fn inspector_config(&self) -> ViewInspectorConfig {
-        let element_config = self.element_config();
-        let bulk_tag_entity = element_config
-            .container_entity
-            .unwrap_or(element_config.element_entities[0]);
-
         match self {
             Self::L3Logical => ViewInspectorConfig {
                 element_sections: vec![
@@ -319,7 +313,6 @@ impl TopologyView {
                     InspectorSection::SubnetDetail,
                     InspectorSection::ElementSummary,
                 ],
-                bulk_tag_entity,
                 dependency_creation: Some(DependencyMemberType::Bindings),
                 show_application_picker: false,
             },
@@ -334,7 +327,6 @@ impl TopologyView {
                     InspectorSection::ElementSummary,
                     InspectorSection::DependencySummary,
                 ],
-                bulk_tag_entity,
                 dependency_creation: Some(DependencyMemberType::Services),
                 show_application_picker: true,
             },
@@ -350,7 +342,6 @@ impl TopologyView {
                     InspectorSection::Identity,
                     InspectorSection::ElementSummary,
                 ],
-                bulk_tag_entity,
                 dependency_creation: Some(DependencyMemberType::Services),
                 show_application_picker: false,
             },
@@ -360,7 +351,6 @@ impl TopologyView {
                     InspectorSection::Identity,
                     InspectorSection::ElementSummary,
                 ],
-                bulk_tag_entity,
                 dependency_creation: None,
                 show_application_picker: false,
             },
