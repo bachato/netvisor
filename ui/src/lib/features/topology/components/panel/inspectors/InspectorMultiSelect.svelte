@@ -458,14 +458,21 @@
 		bindings: Record<string, string>;
 	}
 
-	// Each card's resolved service, in canvas selection order.
+	// Each card's resolved service, in canvas selection order. elementId is the
+	// canvas node ID (unique per card) — the form's bindings map is keyed by
+	// elementId so multiple cards that resolve to the same serviceId don't race
+	// on a shared field and cause reactive loops.
 	interface ResolvedService {
+		elementId: string;
 		serviceId: string;
 		ipAddressIdFilter: string | null;
 	}
 
 	function buildInitialFormValues(): DepFormValues {
 		if (editingDependency) {
+			// In edit mode, each dep member maps to a service-kind target whose
+			// elementId equals its serviceId — so seeding bindings by serviceId is
+			// equivalent to seeding by elementId here.
 			const bindingsSeed: Record<string, string> = {};
 			if (editingDependency.members.type === 'Bindings' && topology) {
 				for (const bid of editingDependency.members.binding_ids) {
@@ -500,7 +507,9 @@
 			if (v.memberMode === 'Bindings') {
 				const bindingIds: string[] = [];
 				for (const r of resolvedServices) {
-					const id = v.bindings?.[r.serviceId];
+					// Try elementId first (new keying). Fall back to serviceId for edit-mode
+					// seeds written by buildInitialFormValues, where elementId === serviceId.
+					const id = v.bindings?.[r.elementId] ?? v.bindings?.[r.serviceId];
 					if (!id) return;
 					bindingIds.push(id);
 				}
@@ -568,7 +577,11 @@
 			const picksMap = formValues.picks;
 			for (const target of depTargets) {
 				if (target.kind === 'service') {
-					out.push({ serviceId: target.serviceId, ipAddressIdFilter: null });
+					out.push({
+						elementId: target.elementId,
+						serviceId: target.serviceId,
+						ipAddressIdFilter: null
+					});
 				} else {
 					if (target.candidateServiceIds.length === 0) continue;
 					const picked =
@@ -576,6 +589,7 @@
 							? target.candidateServiceIds[0]
 							: (picksMap[target.elementId] ?? target.candidateServiceIds[0]);
 					out.push({
+						elementId: target.elementId,
 						serviceId: picked,
 						ipAddressIdFilter: target.kind === 'ipAddress' ? target.ipAddressId : null
 					});
@@ -586,7 +600,10 @@
 	);
 
 	let allServicesHaveBindings = $derived(
-		resolvedServices.length > 0 && resolvedServices.every((r) => !!formValues.bindings[r.serviceId])
+		resolvedServices.length > 0 &&
+			resolvedServices.every(
+				(r) => !!formValues.bindings[r.elementId] || !!formValues.bindings[r.serviceId]
+			)
 	);
 
 	// Keep the view-driven "bindings required" flag in sync with the form.

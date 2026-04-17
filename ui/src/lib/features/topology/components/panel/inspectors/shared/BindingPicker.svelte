@@ -25,20 +25,28 @@
 		fieldPrefix = 'bindings',
 		topology,
 		serviceId,
+		elementId,
 		flatIndex,
 		ipAddressIdFilter = null,
 		disabled = false
 	}: {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		form: any;
-		/** Prefix for the form field path — final field is `${fieldPrefix}.${serviceId}`. */
+		/** Prefix for the form field path — final field is `${fieldPrefix}.${fieldKey}`. */
 		fieldPrefix?: string;
 		topology: Topology;
 		serviceId: string;
+		/** Unique per-card key for the form entry. Defaults to serviceId when absent
+		 *  (backwards compat with callers that use BindingPicker for a single service).
+		 *  When multiple cards resolve to the same serviceId, distinct elementIds prevent
+		 *  them from racing on a shared form field. */
+		elementId?: string;
 		flatIndex: number;
 		ipAddressIdFilter?: string | null;
 		disabled?: boolean;
 	} = $props();
+
+	let fieldKey = $derived(elementId ?? serviceId);
 
 	const subnetsQuery = useSubnetsQuery();
 	let subnetsData = $derived(subnetsQuery.data ?? []);
@@ -101,10 +109,9 @@
 			if (!canonical) continue;
 			const ip = topology.ip_addresses.find((i) => i.id === ipId);
 			if (!ip) continue;
-			// Dedupe across services: skip IPs whose canonical binding is already chosen by another service.
+			// Dedupe across cards: skip IPs whose canonical binding is already chosen by another card.
 			const takenByOther = Object.entries(bindingsMap).some(
-				([otherSvcId, chosenBindingId]) =>
-					otherSvcId !== serviceId && chosenBindingId === canonical.id
+				([otherKey, chosenBindingId]) => otherKey !== fieldKey && chosenBindingId === canonical.id
 			);
 			if (takenByOther) continue;
 			out.push({ ipAddress: ip, bindingId: canonical.id });
@@ -119,8 +126,8 @@
 			if (ipAddressIdFilter != null) {
 				if (b.ip_address_id !== ipAddressIdFilter && b.ip_address_id !== null) return false;
 			}
-			for (const [otherSvcId, chosenId] of Object.entries(bindingsMap)) {
-				if (otherSvcId !== serviceId && chosenId === b.id) return false;
+			for (const [otherKey, chosenId] of Object.entries(bindingsMap)) {
+				if (otherKey !== fieldKey && chosenId === b.id) return false;
 			}
 			return true;
 		});
@@ -130,12 +137,12 @@
 	$effect(() => {
 		if (isFirstService) {
 			if (ipCandidates.length !== 1) return;
-			if (bindingsMap[serviceId] === ipCandidates[0].bindingId) return;
-			form.setFieldValue(`${fieldPrefix}.${serviceId}`, ipCandidates[0].bindingId);
+			if (bindingsMap[fieldKey] === ipCandidates[0].bindingId) return;
+			form.setFieldValue(`${fieldPrefix}.${fieldKey}`, ipCandidates[0].bindingId);
 		} else {
 			if (bindingCandidates.length !== 1) return;
-			if (bindingsMap[serviceId] === bindingCandidates[0].id) return;
-			form.setFieldValue(`${fieldPrefix}.${serviceId}`, bindingCandidates[0].id);
+			if (bindingsMap[fieldKey] === bindingCandidates[0].id) return;
+			form.setFieldValue(`${fieldPrefix}.${fieldKey}`, bindingCandidates[0].id);
 		}
 	});
 
@@ -149,7 +156,7 @@
 
 	// Currently-selected IP for first-service display — derived from the bindingId stored in the form.
 	let selectedIpCandidate = $derived(
-		isFirstService ? ipCandidates.find((c) => c.bindingId === bindingsMap[serviceId]) : undefined
+		isFirstService ? ipCandidates.find((c) => c.bindingId === bindingsMap[fieldKey]) : undefined
 	);
 </script>
 
@@ -179,7 +186,7 @@
 				color: entities.getColorHelper('IPAddress').color
 			}))}
 			<div class="min-w-0 flex-1">
-				<form.Field name="{fieldPrefix}.{serviceId}">
+				<form.Field name="{fieldPrefix}.{fieldKey}">
 					{#snippet children(field: AnyFieldApi)}
 						<EntityTagSelect
 							options={ipOptions}
@@ -227,7 +234,7 @@
 			color: entities.getColorHelper('Port').color
 		}))}
 		<div class="min-w-0 flex-1">
-			<form.Field name="{fieldPrefix}.{serviceId}">
+			<form.Field name="{fieldPrefix}.{fieldKey}">
 				{#snippet children(field: AnyFieldApi)}
 					<EntityTagSelect
 						options={bindingOptions}

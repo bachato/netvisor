@@ -164,6 +164,7 @@
 						{form}
 						{topology}
 						serviceId={resolvedServiceId}
+						elementId={target.elementId}
 						{flatIndex}
 						{ipAddressIdFilter}
 					/>
