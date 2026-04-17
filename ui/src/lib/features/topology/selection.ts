@@ -4,9 +4,20 @@ import type { TopologyNode } from './types/base';
 import {
 	selectedNode as globalSelectedNode,
 	selectedEdge as globalSelectedEdge,
-	selectedNodes as globalSelectedNodes
+	selectedNodes as globalSelectedNodes,
+	editingDependencyId
 } from './queries';
 import { clearSearch } from './interactions';
+
+/**
+ * Any user-initiated selection change on the canvas abandons dep-edit mode.
+ * startEditing() writes selectedNodes/selectedEdge directly via their raw
+ * setters — it does not route through these wrappers — so clearing here is
+ * safe and won't cancel the edit flow as it starts up.
+ */
+function cancelDependencyEdit(): void {
+	editingDependencyId.set(null);
+}
 
 /**
  * Store references for selection state.
@@ -25,6 +36,7 @@ const defaultStores: SelectionStores = {
 };
 
 export function selectNode(node: Node, stores: SelectionStores = defaultStores) {
+	cancelDependencyEdit();
 	clearSearch();
 	stores.selectedNode.set(node);
 	stores.selectedEdge.set(null);
@@ -32,12 +44,14 @@ export function selectNode(node: Node, stores: SelectionStores = defaultStores) 
 }
 
 export function selectEdge(edge: Edge, stores: SelectionStores = defaultStores) {
+	cancelDependencyEdit();
 	clearSearch();
 	stores.selectedEdge.set(edge);
 	stores.selectedNode.set(null);
 }
 
 export function clearSelection(stores: SelectionStores = defaultStores) {
+	cancelDependencyEdit();
 	stores.selectedNode.set(null);
 	stores.selectedEdge.set(null);
 	stores.selectedNodes.set([]);
@@ -45,6 +59,7 @@ export function clearSelection(stores: SelectionStores = defaultStores) {
 }
 
 export function handleModifierNodeClick(node: Node, stores: SelectionStores = defaultStores) {
+	cancelDependencyEdit();
 	const nodeData = node.data as TopologyNode;
 	if (nodeData.node_type !== 'Element') return;
 
@@ -83,6 +98,7 @@ export function handleModifierNodeClick(node: Node, stores: SelectionStores = de
 }
 
 export function handleBoxSelect(newNodes: Node[], stores: SelectionStores = defaultStores) {
+	cancelDependencyEdit();
 	const interfaceNodes = newNodes.filter((n) => {
 		const nodeData = n.data as TopologyNode;
 		return nodeData.node_type === 'Element';
