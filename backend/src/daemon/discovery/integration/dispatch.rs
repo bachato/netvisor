@@ -32,8 +32,13 @@ use super::{
 pub struct IntegrationProbeResults {
     pub client_responses: HashMap<ClientProbe, Vec<PortType>>,
     pub probe_handles: HashMap<CredentialQueryPayloadDiscriminants, Box<dyn Any + Send + Sync>>,
+    /// The credential that successfully probed per integration — `cred_id` is
+    /// `Some` for user-configured (host-assigned) credentials and `None` for
+    /// network-default fallbacks. Execute reads from this to run against the
+    /// credential that actually worked; only `Some` entries participate in
+    /// credential_assignments (defaults are network-wide, not host-scoped).
     pub working_credential_ids:
-        HashMap<CredentialQueryPayloadDiscriminants, (Uuid, CredentialQueryPayload)>,
+        HashMap<CredentialQueryPayloadDiscriminants, (Option<Uuid>, CredentialQueryPayload)>,
     /// Ports discovered by integration probes (added to open_ports).
     pub additional_ports: Vec<PortType>,
 }
@@ -126,11 +131,13 @@ pub async fn probe_integrations(
                     if let Some(handle) = success.handle {
                         results.probe_handles.insert(discriminant, handle);
                     }
-                    if let Some(id) = cred_id {
-                        results
-                            .working_credential_ids
-                            .insert(discriminant, (*id, (*credential).clone()));
-                    }
+                    // Record the winning credential for this integration.
+                    // `cred_id` is Some for user-configured creds (host assignments)
+                    // and None for network-default fallbacks; execute needs the
+                    // payload either way, so we insert unconditionally.
+                    results
+                        .working_credential_ids
+                        .insert(discriminant, (*cred_id, (*credential).clone()));
                     break;
                 }
                 Err(failure) => {
@@ -186,9 +193,10 @@ pub async fn execute_integrations(
 
         let integration = IntegrationRegistry::get(discriminant);
 
-        // Find credential for this IP
-        let credentials = resolve_credentials_for_ip(mapping, params.ip);
-        let Some((credential, cred_id)) = credentials.first() else {
+        // Use the credential that actually succeeded during probe. If no probe
+        // winner was recorded for this integration, there's nothing to execute.
+        let Some((cred_id, credential)) = probe_results.working_credential_ids.get(&discriminant)
+        else {
             continue;
         };
 
@@ -262,10 +270,15 @@ pub async fn execute_integrations(
     // Populate credential_assignments from successful integration probes
     // whose execute() doesn't handle credential assignments itself.
     // SNMP is handled by SnmpIntegration.execute().
+    // Only user-configured credentials (Some id) are auto-assigned; network
+    // defaults (None id) are network-wide and not host-scoped.
     for (discriminant, (cred_id, _credential)) in &probe_results.working_credential_ids {
         if *discriminant == CredentialQueryPayloadDiscriminants::Snmp {
             continue;
         }
+        let Some(cred_id) = cred_id else {
+            continue;
+        };
         host_data
             .host
             .base
