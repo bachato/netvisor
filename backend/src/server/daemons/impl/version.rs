@@ -44,6 +44,23 @@ pub fn pre_interface_to_ip_address_rename(version: Option<&str>) -> bool {
         .is_none_or(|v| v < Version::new(0, 16, 0))
 }
 
+/// First version that ships with the corrected Docker Compose daemon-config
+/// volume mount (`/root/.config/scanopy/daemon`). Releases before this shipped
+/// with `/root/.config/daemon`, which silently registered a new daemon on
+/// upgrade because the volume mount didn't match the daemon's actual config
+/// directory.
+pub fn minimum_correct_docker_volume_mount() -> Version {
+    Version::new(0, 16, 1)
+}
+
+/// Returns true if the daemon version is >= the first release that shipped
+/// with the corrected docker-compose.yml volume mount. Used as a proxy for
+/// "this user probably has the fixed compose file" — imperfect (a user could
+/// be on the latest daemon with a stale compose) but catches the common case.
+pub fn has_correct_docker_volume_mount(version: Option<&Version>) -> bool {
+    version.is_some_and(|v| v >= &minimum_correct_docker_volume_mount())
+}
+
 impl DaemonVersionPolicy {
     pub fn evaluate(&self, version: Option<&Version>) -> DaemonVersionStatus {
         match version {
@@ -66,11 +83,13 @@ impl DaemonVersionPolicy {
                 severity: DeprecationSeverity::Warning,
             }],
             supports_unified_discovery: false,
+            has_correct_docker_volume_mount: false,
         }
     }
 
     fn evaluate_known(&self, v: &Version) -> DaemonVersionStatus {
         let supports_unified = supports_unified_discovery(Some(v));
+        let has_correct_mount = has_correct_docker_volume_mount(Some(v));
         if v < &self.minimum_supported {
             DaemonVersionStatus {
                 version: Some(v.to_string()),
@@ -84,6 +103,7 @@ impl DaemonVersionPolicy {
                     severity: DeprecationSeverity::Critical,
                 }],
                 supports_unified_discovery: supports_unified,
+                has_correct_docker_volume_mount: has_correct_mount,
             }
         } else if v < &self.recommended {
             DaemonVersionStatus {
@@ -98,6 +118,7 @@ impl DaemonVersionPolicy {
                     severity: DeprecationSeverity::Warning,
                 }],
                 supports_unified_discovery: supports_unified,
+                has_correct_docker_volume_mount: has_correct_mount,
             }
         } else {
             DaemonVersionStatus {
@@ -105,6 +126,7 @@ impl DaemonVersionPolicy {
                 status: VersionHealthStatus::Current,
                 warnings: vec![],
                 supports_unified_discovery: supports_unified,
+                has_correct_docker_volume_mount: has_correct_mount,
             }
         }
     }
@@ -137,6 +159,8 @@ pub struct DaemonVersionStatus {
     pub warnings: Vec<DeprecationWarning>,
     #[serde(default)]
     pub supports_unified_discovery: bool,
+    #[serde(default)]
+    pub has_correct_docker_volume_mount: bool,
 }
 
 /// Health status for daemon versions
@@ -237,5 +261,43 @@ mod tests {
         let v015 = Version::new(0, 15, 0);
         let status = policy.evaluate(Some(&v015));
         assert!(status.supports_unified_discovery);
+    }
+
+    #[test]
+    fn test_has_correct_docker_volume_mount() {
+        assert!(!has_correct_docker_volume_mount(None));
+        assert!(!has_correct_docker_volume_mount(Some(&Version::new(
+            0, 14, 8
+        ))));
+        assert!(!has_correct_docker_volume_mount(Some(&Version::new(
+            0, 16, 0
+        ))));
+        assert!(has_correct_docker_volume_mount(Some(&Version::new(
+            0, 16, 1
+        ))));
+        assert!(has_correct_docker_volume_mount(Some(&Version::new(
+            0, 17, 0
+        ))));
+        assert!(has_correct_docker_volume_mount(Some(&Version::new(
+            1, 0, 0
+        ))));
+    }
+
+    #[test]
+    fn test_version_status_has_correct_volume_mount_flag() {
+        let policy = test_policy();
+        let pre_fix = Version::new(0, 16, 0);
+        let at_fix = Version::new(0, 16, 1);
+        assert!(
+            !policy
+                .evaluate(Some(&pre_fix))
+                .has_correct_docker_volume_mount
+        );
+        assert!(
+            policy
+                .evaluate(Some(&at_fix))
+                .has_correct_docker_volume_mount
+        );
+        assert!(!policy.evaluate(None).has_correct_docker_volume_mount);
     }
 }
