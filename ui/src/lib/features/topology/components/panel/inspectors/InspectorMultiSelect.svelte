@@ -693,8 +693,14 @@
 	});
 
 	// Bubble dependency_type changes to the parent (tutorial checklist watches this).
+	// Skip the initial mount firing — only notify on real user-driven changes.
+	let previousDependencyType: DependencyType | undefined;
 	$effect(() => {
-		onDependencyTypeChange?.(formValues.dependency_type);
+		const current = formValues.dependency_type;
+		if (previousDependencyType !== undefined && previousDependencyType !== current) {
+			onDependencyTypeChange?.(current);
+		}
+		previousDependencyType = current;
 	});
 
 	let lastAutoName = $state('');
