@@ -88,6 +88,70 @@ jobs:
           path: ui/src/lib/data/*.json
           retention-days: 1
 
+  migration-branch-test:
+    name: Test migrations on Neon branch
+    runs-on: ubuntu-latest
+    needs: test-and-update-fixtures
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.target_commitish }}
+
+      - name: Compute branch expiration (24h safety net)
+        run: echo "EXPIRES_AT=$(date -u -d '+1 day' +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
+
+      - name: Create Neon branch off prod
+        id: create_branch
+        uses: neondatabase/create-branch-action@v6
+        with:
+          project_id: ${{ vars.NEON_PROJECT_ID }}
+          branch_name: release/${{ github.event.release.tag_name }}-migration-check
+          api_key: ${{ secrets.NEON_API_KEY }}
+          expires_at: ${{ env.EXPIRES_AT }}
+
+      - name: Install sqlx-cli
+        uses: taiki-e/install-action@v2
+        with:
+          tool: sqlx-cli
+
+      - name: Snapshot schema before migrations
+        run: pg_dump --schema-only --no-owner --no-privileges "$DATABASE_URL" > /tmp/before.sql
+        env:
+          DATABASE_URL: ${{ steps.create_branch.outputs.db_url }}
+
+      - name: Apply migrations
+        working-directory: backend
+        run: sqlx migrate run
+        env:
+          DATABASE_URL: ${{ steps.create_branch.outputs.db_url }}
+
+      - name: Snapshot schema after migrations and write diff to job summary
+        run: |
+          pg_dump --schema-only --no-owner --no-privileges "$DATABASE_URL" > /tmp/after.sql
+          {
+            echo "## Migration schema delta — ${{ github.event.release.tag_name }}"
+            echo ""
+            if diff -q /tmp/before.sql /tmp/after.sql >/dev/null; then
+              echo "_No schema changes were applied._"
+            else
+              echo '```diff'
+              diff -u /tmp/before.sql /tmp/after.sql || true
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          DATABASE_URL: ${{ steps.create_branch.outputs.db_url }}
+
+      - name: Delete Neon branch
+        if: always()
+        uses: neondatabase/delete-branch-action@v3
+        with:
+          project_id: ${{ vars.NEON_PROJECT_ID }}
+          branch: release/${{ github.event.release.tag_name }}-migration-check
+          api_key: ${{ secrets.NEON_API_KEY }}
+
   build-binaries:
     name: Build Daemon Binaries
     runs-on: ${{ matrix.os }}
@@ -184,7 +248,7 @@ jobs:
   build-docker-server-community:
     name: Build Server (Community)
     runs-on: ${{ matrix.runner }}
-    needs: [build-binaries, test-and-update-fixtures]
+    needs: [build-binaries, test-and-update-fixtures, migration-branch-test]
     permissions:
       contents: read
       packages: write
@@ -240,7 +304,7 @@ jobs:
   build-docker-server-commercial:
     name: Build Server (Commercial)
     runs-on: ${{ matrix.runner }}
-    needs: [build-binaries, test-and-update-fixtures]
+    needs: [build-binaries, test-and-update-fixtures, migration-branch-test]
     permissions:
       contents: read
       packages: write
@@ -297,7 +361,7 @@ jobs:
   build-docker-daemon:
     name: Build Daemon Docker
     runs-on: ubuntu-latest
-    needs: build-binaries
+    needs: [build-binaries, migration-branch-test]
     permissions:
       contents: read
       packages: write

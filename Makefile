@@ -1,4 +1,4 @@
-.PHONY: help build test test-unit clean format generate-schema generate-messages generate-fixtures update-oui seed-dev set-plan-community set-plan-starter set-plan-pro set-plan-team set-plan-business set-plan-enterprise test-plan test-merge test-results install-dev-mac install-dev-linux install-dev-windows snmp-up snmp-down snmp-status docker-proxy-up docker-proxy-up-tls docker-proxy-down docker-proxy-status
+.PHONY: help build test test-unit clean format lint lint-migrations generate-schema generate-messages generate-fixtures update-oui seed-dev set-plan-community set-plan-starter set-plan-pro set-plan-team set-plan-business set-plan-enterprise test-plan test-merge test-results install-dev-mac install-dev-linux install-dev-windows snmp-up snmp-down snmp-status docker-proxy-up docker-proxy-up-tls docker-proxy-down docker-proxy-status
 
 help:
 	@echo "Scanopy Development Commands"
@@ -20,7 +20,8 @@ help:
 	@echo "  make build          - Build production Docker images (server + daemon)"
 	@echo "  make test           - Run all tests (includes integration tests)"
 	@echo "  make test-unit      - Run unit tests only (no Docker/database required)"
-	@echo "  make lint           - Run all linters"
+	@echo "  make lint           - Run all linters (includes lint-migrations)"
+	@echo "  make lint-migrations - Lint post-20260501 migrations with squawk"
 	@echo "  make format         - Format all code"
 	@echo "  make generate-types  - Generate TypeScript types from Rust"
 	@echo "  make generate-messages - Generate i18n message functions from messages/*.json"
@@ -70,6 +71,9 @@ clean-db:
 
 migrate-db:
 	cd backend && sqlx migrate run --database-url postgresql://postgres:password@localhost:5432/scanopy
+
+lint-migrations:
+	@cd backend && ./scripts/lint-migrations.sh
 
 seed-dev:
 	@echo "Seeding dev database with test user..."
@@ -228,6 +232,8 @@ lint:
 	cd ui && npx paraglide-js compile --outdir ./src/lib/paraglide --silent
 	@echo "Linting UI..."
 	cd ui && npm run lint && npm run format -- --check && npm run check
+	@echo "Linting migrations..."
+	@$(MAKE) lint-migrations
 
 generate-types: generate-api-types generate-error-codes
 	@echo "All types generated successfully"

@@ -294,6 +294,10 @@ make test    # Run all tests
 
 All three commands must pass without errors before submitting your PR.
 
+### Database Migrations
+
+Migrations live in `backend/migrations/` and must be backward-compatible — during deploys, old and new application code run side by side and a breaking migration crashes the old container. The full rules (expand-and-contract patterns, `CREATE INDEX CONCURRENTLY`, `lock_timeout`, batched backfills) live in the Scanopy infrastructure repo's `migration-guidelines.md`. Run `make lint-migrations` before pushing. CI enforces this in two layers: `squawk` lints every PR, and the release workflow applies each migration to a Neon branch off production before publishing Docker images.
+
 ## Adding Service Definitions
 
 Service definitions are the best place to start contributing! They help Scanopy identify and categorize services during network discovery.

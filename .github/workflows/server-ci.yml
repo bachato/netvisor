@@ -9,6 +9,9 @@ on:
       - 'backend/src/server/**'
       - 'backend/src/*.rs'
       - 'backend/*'
+      - 'backend/migrations/**'
+      - 'backend/scripts/lint-migrations.sh'
+      - '.squawk.toml'
       - '.github/workflows/server-ci.yml'
   pull_request:
     paths:
@@ -16,6 +19,9 @@ on:
       - 'backend/src/server/**'
       - 'backend/src/*.rs'
       - 'backend/*'
+      - 'backend/migrations/**'
+      - 'backend/scripts/lint-migrations.sh'
+      - '.squawk.toml'
       - '.github/workflows/server-ci.yml'
 
 permissions:
@@ -56,6 +62,12 @@ jobs:
       
       - name: Test server binary
         run: cargo test --lib
-      
+
+      - name: Install squawk
+        run: npm install -g squawk-cli@2.47.0
+
+      - name: Lint migrations
+        run: ./scripts/lint-migrations.sh
+
       - name: Build server (release)
         run: cargo build --release --bin server
