@@ -800,6 +800,8 @@ impl DaemonService {
             existing_daemon.base.last_seen = Some(Utc::now());
             existing_daemon.base.mode = request.mode;
             existing_daemon.base.name = request.name;
+            // A daemon that's re-registering is by definition no longer on standby.
+            existing_daemon.base.standby = false;
             let was_pre_unified =
                 !supports_unified_discovery(existing_daemon.base.version.as_ref());
             if let Some(v) = daemon_version.clone() {
