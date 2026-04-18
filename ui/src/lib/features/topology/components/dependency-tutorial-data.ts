@@ -1,8 +1,9 @@
 import type { Topology } from '../types/base';
 import type { Node } from '@xyflow/svelte';
+import { v4 as uuidv4 } from 'uuid';
 
-const HOST_IDS = [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()];
-const SERVICE_IDS = [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()];
+const HOST_IDS = [uuidv4(), uuidv4(), uuidv4()];
+const SERVICE_IDS = [uuidv4(), uuidv4(), uuidv4()];
 
 export const TUTORIAL_SERVICES = [
 	{
@@ -29,9 +30,9 @@ export const TUTORIAL_SERVICES = [
 ];
 
 export const TUTORIAL_TOPOLOGY: Topology = {
-	id: crypto.randomUUID(),
+	id: uuidv4(),
 	name: 'Tutorial',
-	network_id: crypto.randomUUID(),
+	network_id: uuidv4(),
 	is_locked: false,
 	is_stale: false,
 	last_refreshed: new Date().toISOString(),

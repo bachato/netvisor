@@ -1,6 +1,7 @@
 import type { components } from '$lib/api/schema';
 import containerRuleTypes from '$lib/data/container-rule-types.json';
 import elementRuleTypes from '$lib/data/element-rule-types.json';
+import { v4 as uuidv4 } from 'uuid';
 
 export type GraphRule<T> = { id: string; rule: T };
 export type ContainerRule = components['schemas']['IdentifiedRule_ContainerRule']['rule'];
@@ -38,5 +39,5 @@ export function setElementRuleTitle(rule: ElementRule, title: string | null): El
 }
 
 export function makeGraphRule<T>(rule: T): GraphRule<T> {
-	return { id: crypto.randomUUID(), rule };
+	return { id: uuidv4(), rule };
 }
