@@ -132,8 +132,6 @@ pub enum ErrorCode {
     SharePasswordIncorrect,
     /// Share access token is invalid, expired, or signed with a stale password hash
     ShareTokenInvalid,
-    /// Domain not allowed for this share
-    ShareDomainNotAllowed { domain: String },
 
     // === Invites ===
     /// Invite has already been accepted
@@ -279,7 +277,6 @@ impl ErrorCode {
             Self::SharePasswordRequired => "Password required for this share",
             Self::SharePasswordIncorrect => "Incorrect password",
             Self::ShareTokenInvalid => "Access token is invalid or expired",
-            Self::ShareDomainNotAllowed { .. } => "Domain '{domain}' not allowed",
 
             // Invites
             Self::InviteAlreadyAccepted => "This invite has already been accepted",
@@ -429,7 +426,6 @@ impl ErrorCode {
             // Domain-specific with params
             Self::HostsConsolidateFailed { reason } => Some(json_map! { "reason" => reason }),
             Self::NetworksAccessDenied { network } => Some(json_map! { "network" => network }),
-            Self::ShareDomainNotAllowed { domain } => Some(json_map! { "domain" => domain }),
             Self::DiscoverySubnetNetworkMismatch { subnet } => {
                 Some(json_map! { "subnet" => subnet })
             }

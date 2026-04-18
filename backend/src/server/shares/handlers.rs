@@ -3,7 +3,7 @@ use std::{num::NonZeroU32, sync::Arc};
 use axum::{
     Extension, Json,
     extract::{Path, Query, State},
-    http::{HeaderMap, HeaderValue, header},
+    http::{HeaderValue, header},
     response::{Html, IntoResponse, Response},
 };
 use governor::{Quota, RateLimiter, clock::DefaultClock, state::keyed::DashMapStateStore};
@@ -11,8 +11,6 @@ use serde::Deserialize;
 use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
-
-use axum::http::StatusCode;
 
 use chrono::Utc;
 use serde_json::json;
@@ -36,10 +34,7 @@ use crate::server::{
         handlers::traits::{CrudHandlers, create_handler, update_handler},
         services::traits::CrudService,
         storage::traits::{Entity, Storage},
-        types::{
-            api::{ApiError, ApiErrorResponse, ApiResponse, ApiResult},
-            error_codes::ErrorCode,
-        },
+        types::api::{ApiError, ApiErrorResponse, ApiResponse, ApiResult},
     },
     shares::r#impl::{
         api::{
@@ -377,7 +372,6 @@ async fn get_share_topology(
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
     Query(query): Query<ShareQuery>,
-    req_headers: HeaderMap,
     Json(body): Json<ShareTopologyRequest>,
 ) -> ApiResult<Response> {
     let share = state
@@ -421,24 +415,12 @@ async fn get_share_topology(
         }
     }
 
-    // Validate allowed_domains only for embed requests
-    if query.embed && share.has_domain_restrictions() {
-        let referer = req_headers
-            .get(header::REFERER)
-            .and_then(|v| v.to_str().ok());
-
-        if !state
-            .services
-            .share_service
-            .validate_allowed_domains(&share, referer)
-        {
-            let domain = referer.unwrap_or("unknown").to_string();
-            return Err(ApiError::coded(
-                StatusCode::FORBIDDEN,
-                ErrorCode::ShareDomainNotAllowed { domain },
-            ));
-        }
-    }
+    // Parent-origin restriction for embeds is enforced by
+    // `Content-Security-Policy: frame-ancestors` on the HTML response
+    // (see `share_html_handler`). The browser blocks disallowed framings
+    // before the iframe renders; the Referer header never carries the
+    // parent frame's origin for same-origin iframe fetches, so a
+    // server-side referer check here cannot enforce what it appears to.
 
     // Get topology data
     let mut topology = state

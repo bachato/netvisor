@@ -181,44 +181,6 @@ impl ShareService {
     pub fn verify_access_token(&self, share: &Share, token: &str) -> Result<(), ApiError> {
         verify_token_impl(share, token)
     }
-
-    /// Validate that a domain is allowed based on the share's allowed_domains setting
-    pub fn validate_allowed_domains(&self, share: &Share, referer: Option<&str>) -> bool {
-        // If no allowed_domains set, allow all
-        let Some(ref allowed) = share.base.allowed_domains else {
-            return true;
-        };
-
-        // If allowed_domains is empty array, allow all
-        if allowed.is_empty() {
-            return true;
-        }
-
-        // Must have a referer to validate
-        let Some(referer) = referer else {
-            return false;
-        };
-
-        // Parse the referer URL
-        let Ok(url) = url::Url::parse(referer) else {
-            return false;
-        };
-
-        let Some(host) = url.host_str() else {
-            return false;
-        };
-
-        // Check if host matches any allowed domain (with wildcard support)
-        allowed.iter().any(|domain| {
-            if domain.starts_with("*.") {
-                // Wildcard domain: *.example.com matches foo.example.com
-                let suffix = &domain[1..]; // Remove * to get .example.com
-                host.ends_with(suffix) || host == &domain[2..] // Also match example.com
-            } else {
-                host == domain
-            }
-        })
-    }
 }
 
 #[cfg(test)]
