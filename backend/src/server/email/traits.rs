@@ -12,16 +12,17 @@ use crate::server::{
         DISCOVERY_GUIDE_PAID_BODY, DISCOVERY_GUIDE_PAID_TITLE, EMAIL_CHANGED_OLD_BODY,
         EMAIL_CHANGED_OLD_TITLE, EMAIL_FOOTER, EMAIL_HEADER, EMAIL_VERIFICATION_BODY,
         INSTALL_COMMAND_BODY, INSTALL_COMMAND_TITLE, INVITE_LINK_BODY, OIDC_LINKED_BODY,
-        OIDC_LINKED_TITLE, OIDC_UNLINKED_BODY, OIDC_UNLINKED_TITLE, PASSWORD_CHANGED_BODY,
-        PASSWORD_CHANGED_TITLE, PASSWORD_RESET_BODY, PAYMENT_ACTION_REQUIRED_BODY,
-        PAYMENT_ACTION_REQUIRED_TITLE, PAYMENT_FAILED_BODY, PAYMENT_FAILED_TITLE,
-        PAYMENT_METHOD_ADDED_BODY, PAYMENT_METHOD_ADDED_TITLE, PLAN_CHANGED_BODY,
-        PLAN_CHANGED_TITLE, PLAN_LIMIT_APPROACHING_BODY, PLAN_LIMIT_APPROACHING_TITLE,
-        PLAN_LIMIT_REACHED_BODY, PLAN_LIMIT_REACHED_TITLE, SUBSCRIPTION_CANCELLED_BODY,
-        SUBSCRIPTION_CANCELLED_TITLE, TOPOLOGY_READY_BODY, TOPOLOGY_READY_TITLE,
-        TRIAL_CONVERTED_BODY, TRIAL_CONVERTED_TITLE, TRIAL_ENDING_BODY_HAS_PAYMENT,
-        TRIAL_ENDING_BODY_NO_PAYMENT, TRIAL_ENDING_TITLE, TRIAL_EXPIRED_BODY, TRIAL_EXPIRED_TITLE,
-        TRIAL_STARTED_BODY, TRIAL_STARTED_TITLE, USAGE_SUMMARY_BODY, USAGE_SUMMARY_TITLE,
+        OIDC_LINKED_TITLE, OIDC_UNLINKED_BODY, OIDC_UNLINKED_TITLE, ORGANIZATION_DELETED_BODY,
+        ORGANIZATION_DELETED_TITLE, PASSWORD_CHANGED_BODY, PASSWORD_CHANGED_TITLE,
+        PASSWORD_RESET_BODY, PAYMENT_ACTION_REQUIRED_BODY, PAYMENT_ACTION_REQUIRED_TITLE,
+        PAYMENT_FAILED_BODY, PAYMENT_FAILED_TITLE, PAYMENT_METHOD_ADDED_BODY,
+        PAYMENT_METHOD_ADDED_TITLE, PLAN_CHANGED_BODY, PLAN_CHANGED_TITLE,
+        PLAN_LIMIT_APPROACHING_BODY, PLAN_LIMIT_APPROACHING_TITLE, PLAN_LIMIT_REACHED_BODY,
+        PLAN_LIMIT_REACHED_TITLE, SUBSCRIPTION_CANCELLED_BODY, SUBSCRIPTION_CANCELLED_TITLE,
+        TOPOLOGY_READY_BODY, TOPOLOGY_READY_TITLE, TRIAL_CONVERTED_BODY, TRIAL_CONVERTED_TITLE,
+        TRIAL_ENDING_BODY_HAS_PAYMENT, TRIAL_ENDING_BODY_NO_PAYMENT, TRIAL_ENDING_TITLE,
+        TRIAL_EXPIRED_BODY, TRIAL_EXPIRED_TITLE, TRIAL_STARTED_BODY, TRIAL_STARTED_TITLE,
+        USAGE_SUMMARY_BODY, USAGE_SUMMARY_TITLE,
     },
     hosts::{r#impl::base::Host, service::HostService},
     networks::{r#impl::Network, service::NetworkService},
@@ -154,6 +155,11 @@ pub trait EmailProvider: Send + Sync {
         self.send_billing_email(to, subject, body).await
     }
 
+    async fn send_organization_deleted_email(&self, to: EmailAddress) -> Result<(), Error> {
+        let (subject, body) = self.build_organization_deleted_email();
+        self.send_billing_email(to, subject, body).await
+    }
+
     fn build_trial_started_email(
         &self,
         plan_name: &str,
@@ -218,6 +224,11 @@ pub trait EmailProvider: Send + Sync {
     fn build_subscription_cancelled_email(&self) -> (String, String) {
         let body = self.build_email(SUBSCRIPTION_CANCELLED_BODY.to_string());
         (SUBSCRIPTION_CANCELLED_TITLE.to_string(), body)
+    }
+
+    fn build_organization_deleted_email(&self) -> (String, String) {
+        let body = self.build_email(ORGANIZATION_DELETED_BODY.to_string());
+        (ORGANIZATION_DELETED_TITLE.to_string(), body)
     }
 
     fn build_payment_method_added_email(&self) -> (String, String) {
@@ -636,6 +647,12 @@ impl EmailService {
 
     pub async fn send_subscription_cancelled_email(&self, to: EmailAddress) -> Result<()> {
         let (subject, body) = self.provider.build_subscription_cancelled_email();
+        let body = body.replace("{base_url}", &self.public_url);
+        self.provider.send_billing_email(to, subject, body).await
+    }
+
+    pub async fn send_organization_deleted_email(&self, to: EmailAddress) -> Result<()> {
+        let (subject, body) = self.provider.build_organization_deleted_email();
         let body = body.replace("{base_url}", &self.public_url);
         self.provider.send_billing_email(to, subject, body).await
     }
