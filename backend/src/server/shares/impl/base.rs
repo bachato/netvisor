@@ -68,6 +68,12 @@ pub struct ShareBase {
     /// Password hash - never sent to client, never accept from client
     #[serde(skip)]
     pub password_hash: Option<String>,
+    /// Whether a password is set — computed from `password_hash` server-side,
+    /// never stored in DB. Clients may send any value; handlers overwrite it
+    /// from `password_hash` before persisting and before responding.
+    #[serde(default)]
+    #[schema(read_only)]
+    pub has_password: bool,
     #[schema(required)]
     pub allowed_domains: Option<Vec<String>>,
     pub options: ShareOptions,
@@ -203,6 +209,9 @@ impl Storable for Share {
             .flatten()
             .and_then(|v| serde_json::from_value(v).ok());
 
+        let password_hash: Option<String> = row.get("password_hash");
+        let has_password = password_hash.is_some();
+
         Ok(Share {
             id: row.get("id"),
             created_at: row.get("created_at"),
@@ -214,7 +223,8 @@ impl Storable for Share {
                 name: row.get("name"),
                 is_enabled: row.get("is_enabled"),
                 expires_at: row.get("expires_at"),
-                password_hash: row.get("password_hash"),
+                password_hash,
+                has_password,
                 allowed_domains: row.get("allowed_domains"),
                 options,
                 enabled_views,

@@ -29,7 +29,7 @@
 	import UpgradeButton from '$lib/shared/components/UpgradeButton.svelte';
 	import { pushError } from '$lib/shared/stores/feedback';
 	import {
-		common_cancel,
+		common_close,
 		common_failedToSave,
 		common_save,
 		common_saving,
@@ -137,12 +137,19 @@
 			created_by: currentUser?.id ?? ''
 		};
 		sharesData = [...sharesData, newShare];
-		form.setFieldValue('shares', sharesData.map(toFormEntry));
+		// Append to the form array in place so in-flight edits on existing entries
+		// (typed passwords, toggled checkboxes) survive the add.
+		const current = form.state.values.shares ?? [];
+		form.setFieldValue('shares', [...current, toFormEntry(newShare)]);
 	}
 
 	function handleRemove(index: number) {
 		sharesData = sharesData.filter((_, i) => i !== index);
-		form.setFieldValue('shares', sharesData.map(toFormEntry));
+		const current = form.state.values.shares ?? [];
+		form.setFieldValue(
+			'shares',
+			current.filter((_, i) => i !== index)
+		);
 	}
 
 	// Resolve field paths to human-readable names for validation errors
@@ -216,7 +223,10 @@
 					await createShareMutation.mutateAsync({ share: shareData, password });
 				}
 			}
-			onClose();
+			// Save stays open: trigger a fresh hydration so originalShareIds picks up the
+			// newly-saved IDs (URLs/embed then become visible for those shares) and form
+			// state is reset from the now-canonical query cache.
+			hydrated = false;
 		} catch (error) {
 			pushError(error instanceof Error ? error.message : common_failedToSave());
 		} finally {
@@ -288,6 +298,7 @@
 								{share}
 								{index}
 								{form}
+								isSaved={originalShareIds.has(share.id)}
 								onChange={(updatedShare) => handleShareChange(updatedShare, index)}
 							/>
 						</div>
@@ -305,9 +316,9 @@
 		<div class="modal-footer">
 			<div class="flex items-center justify-end gap-3">
 				<button type="button" onclick={onClose} class="btn-secondary">
-					{common_cancel()}
+					{common_close()}
 				</button>
-				{#if sharesData.length > 0}
+				{#if sharesData.length > 0 || originalShareIds.size > 0}
 					<button type="button" disabled={saving} onclick={handleSave} class="btn-primary">
 						{saving ? common_saving() : common_save()}
 					</button>

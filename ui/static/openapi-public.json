@@ -10366,14 +10366,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-18T14:12:05.071468Z",
-              "id": "ac0bc1f1-dcc9-490c-8000-dbd457e1378c",
+              "created_at": "2026-04-18T18:18:37.151376Z",
+              "id": "eed4de52-76fa-4c2e-a613-2dd47a6b60c6",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-18T14:12:05.071468Z"
+              "updated_at": "2026-04-18T18:18:37.151376Z"
             }
           },
           "error": {
@@ -11272,14 +11272,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-18T14:12:05.054689Z",
-                      "id": "74cfe877-f184-4454-be57-a94bc5fcea82",
+                      "created_at": "2026-04-18T18:18:37.130829Z",
+                      "id": "32f969d4-c071-4d49-b446-514152797779",
                       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-18T14:12:05.054689Z"
+                      "updated_at": "2026-04-18T18:18:37.130829Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -11288,7 +11288,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Nest Protect",
+                  "service_definition": "Cassandra",
                   "source": {
                     "type": "Manual"
                   },
@@ -12011,14 +12011,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-18T14:12:05.066762Z",
-                  "id": "ba2aab01-662b-47ec-8f5d-77254812c789",
+                  "created_at": "2026-04-18T18:18:37.145724Z",
+                  "id": "14ec3b1b-804d-4c1e-9484-aae9297a61a1",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-18T14:12:05.066762Z"
+                  "updated_at": "2026-04-18T18:18:37.145724Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -12027,7 +12027,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Nest Protect",
+              "service_definition": "Cassandra",
               "source": {
                 "type": "Manual"
               },
@@ -12122,6 +12122,44 @@
                 }
               }
             ]
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponse_ShareAccessTokenResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "object",
+            "description": "Access token returned after successful password verification.\n\nThe token is an HS256 JWT tied to the share's `password_hash` — changing\nthe share password implicitly invalidates all outstanding tokens.",
+            "required": [
+              "access_token",
+              "expires_at"
+            ],
+            "properties": {
+              "access_token": {
+                "type": "string"
+              },
+              "expires_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
           },
           "error": {
             "type": [
@@ -13109,30 +13147,6 @@
           }
         }
       },
-      "ApiResponse_bool": {
-        "type": "object",
-        "required": [
-          "success",
-          "meta"
-        ],
-        "properties": {
-          "data": {
-            "type": "boolean"
-          },
-          "error": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "meta": {
-            "$ref": "#/components/schemas/ApiMeta"
-          },
-          "success": {
-            "type": "boolean"
-          }
-        }
-      },
       "ApiResponse_u32": {
         "type": "object",
         "required": [
@@ -13392,14 +13406,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-18T14:12:05.055030Z",
-          "id": "a0b59459-1f9e-4c34-8a57-32278cf20afc",
+          "created_at": "2026-04-18T18:18:37.131224Z",
+          "id": "eb682199-6831-4f87-a4ed-cd6d24547d97",
           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-18T14:12:05.055030Z"
+          "updated_at": "2026-04-18T18:18:37.131224Z"
         }
       },
       "BindingBase": {
@@ -13929,7 +13943,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Nest Protect",
+              "service_definition": "Cassandra",
               "tags": [],
               "virtualization": null
             }
@@ -16447,14 +16461,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-18T14:12:05.054212Z",
-                  "id": "be53bbc7-e7c7-4186-8689-8cba8336df25",
+                  "created_at": "2026-04-18T18:18:37.130277Z",
+                  "id": "89feec59-457b-41e0-b2f8-004a20c90e09",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-18T14:12:05.054212Z"
+                  "updated_at": "2026-04-18T18:18:37.130277Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -16463,7 +16477,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Nest Protect",
+              "service_definition": "Cassandra",
               "source": {
                 "type": "Manual"
               },
@@ -18690,14 +18704,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-18T14:12:05.043305Z",
-                        "id": "5a47dd77-f6eb-48f7-9fe9-2b33bb2258eb",
+                        "created_at": "2026-04-18T18:18:37.116493Z",
+                        "id": "2799fa7d-89f8-4c23-871e-5c77c34b971e",
                         "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-18T14:12:05.043305Z"
+                        "updated_at": "2026-04-18T18:18:37.116493Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -18706,7 +18720,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Nest Protect",
+                    "service_definition": "Cassandra",
                     "source": {
                       "type": "Manual"
                     },
@@ -18783,14 +18797,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-18T14:12:05.065466Z",
-                    "id": "4c18fe1d-6984-4f05-8155-33ed4fe93491",
+                    "created_at": "2026-04-18T18:18:37.144092Z",
+                    "id": "f5a53394-728c-4585-8b60-719f9fed9a04",
                     "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-18T14:12:05.065466Z"
+                    "updated_at": "2026-04-18T18:18:37.144092Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -18799,7 +18813,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Nest Protect",
+                "service_definition": "Cassandra",
                 "source": {
                   "type": "Manual"
                 },
@@ -20037,14 +20051,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-18T14:12:05.054914Z",
-              "id": "2d6eefdb-b793-4756-8b74-4656bedf8088",
+              "created_at": "2026-04-18T18:18:37.131082Z",
+              "id": "e41605ed-4e0b-4875-93e9-da7f18506786",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-18T14:12:05.054914Z"
+              "updated_at": "2026-04-18T18:18:37.131082Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -20053,7 +20067,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Nest Protect",
+          "service_definition": "Cassandra",
           "source": {
             "type": "Manual"
           },
@@ -20359,6 +20373,23 @@
           }
         ]
       },
+      "ShareAccessTokenResponse": {
+        "type": "object",
+        "description": "Access token returned after successful password verification.\n\nThe token is an HS256 JWT tied to the share's `password_hash` — changing\nthe share password implicitly invalidates all outstanding tokens.",
+        "required": [
+          "access_token",
+          "expires_at"
+        ],
+        "properties": {
+          "access_token": {
+            "type": "string"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "ShareBase": {
         "type": "object",
         "required": [
@@ -20402,6 +20433,11 @@
               "null"
             ],
             "format": "date-time"
+          },
+          "has_password": {
+            "type": "boolean",
+            "description": "Whether a password is set — computed from `password_hash` server-side,\nnever stored in DB. Clients may send any value; handlers overwrite it\nfrom `password_hash` before persisting and before responding.",
+            "readOnly": true
           },
           "is_enabled": {
             "type": "boolean"

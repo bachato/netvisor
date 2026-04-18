@@ -161,6 +161,7 @@ async fn create_share(
         share.base.password_hash =
             Some(hash_password(&password).map_err(|e| ApiError::internal_error(&e.to_string()))?);
     }
+    share.base.has_password = share.base.password_hash.is_some();
 
     share.base.created_by = auth.user_id().ok_or_else(ApiError::user_required)?;
 
@@ -222,6 +223,7 @@ async fn update_share(
             );
         }
     }
+    share.base.has_password = share.base.password_hash.is_some();
 
     // Delegate to generic handler
     update_handler::<Share>(
