@@ -143,20 +143,6 @@
 		syncEnabledViews();
 	}
 
-	function handleMoveViewUp(from: number, to: number) {
-		const arr = [...enabledViewIds];
-		[arr[from], arr[to]] = [arr[to], arr[from]];
-		enabledViewIds = arr;
-		syncEnabledViews();
-	}
-
-	function handleMoveViewDown(from: number, to: number) {
-		const arr = [...enabledViewIds];
-		[arr[from], arr[to]] = [arr[to], arr[from]];
-		enabledViewIds = arr;
-		syncEnabledViews();
-	}
-
 	function syncEnabledViews() {
 		// Empty list = null (all views enabled)
 		const value = enabledViewIds.length === 0 ? null : enabledViewIds;
@@ -235,13 +221,11 @@
 				itemDisplayComponent={SimpleOptionDisplay}
 				allowAddFromOptions={true}
 				allowCreateNew={false}
-				allowReorder={true}
+				allowReorder={false}
 				itemClickAction={null}
 				allowItemEdit={() => false}
 				onAdd={handleAddView}
 				onRemove={handleRemoveView}
-				onMoveUp={handleMoveViewUp}
-				onMoveDown={handleMoveViewDown}
 			/>
 		</div>
 	</CollapsibleCard>

@@ -1089,7 +1089,7 @@
 	"shares_embedsRequirePlan": "Embeds require an upgraded plan",
 	"shares_enabledHelp": "Disable to temporarily prevent access",
 	"shares_enabledViews": "Enabled Views",
-	"shares_enabledViewsHelp": "Select which views are available. The first view is shown by default.",
+	"shares_enabledViewsHelp": "Select which views are available to viewers of this share.",
 	"shares_expirationDate": "Expiration Date",
 	"shares_expirationHelp": "Leave empty to never expire",
 	"shares_manageShares": "Manage Shares for {name}",

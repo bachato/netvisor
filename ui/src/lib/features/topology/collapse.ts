@@ -100,7 +100,7 @@ if (browser) {
 	});
 }
 
-export const collapseLevel = writable<CollapseLevel>(loadLevelFromStorage() ?? 1);
+export const collapseLevel = writable<CollapseLevel>(loadLevelFromStorage() ?? 3);
 
 if (browser) {
 	let levelInitialized = false;

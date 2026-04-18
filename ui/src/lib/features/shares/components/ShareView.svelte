@@ -78,7 +78,9 @@
 
 		shareMetadata = metaResult.data;
 		enabledViews = shareMetadata.enabled_views;
-		currentView = enabledViews[0] ?? 'L3Logical';
+		currentView = enabledViews.includes('L3Logical')
+			? 'L3Logical'
+			: (enabledViews[0] ?? 'L3Logical');
 
 		if (!shareMetadata.requires_password) {
 			const topoResult = await getPublicShareTopology(shareId, {
