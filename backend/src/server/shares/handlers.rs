@@ -7,6 +7,7 @@ use axum::{
     response::{Html, IntoResponse, Response},
 };
 use governor::{Quota, RateLimiter, clock::DefaultClock, state::keyed::DashMapStateStore};
+use secrecy::ExposeSecret;
 use serde::Deserialize;
 use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
@@ -28,6 +29,7 @@ use crate::server::{
     },
     billing::types::base::BillingPlan,
     config::AppState,
+    credentials::r#impl::types::REDACTED_SECRET_SENTINEL,
     networks::r#impl::Network,
     organizations::r#impl::base::Organization,
     shared::validation::validate_csp_domain,
@@ -142,10 +144,7 @@ async fn create_share(
     State(state): State<Arc<AppState>>,
     _feature: RequireFeature<ShareViewsFeature>,
     auth: Authorized<RequireVerified<Member>>,
-    Json(CreateUpdateShareRequest {
-        mut share,
-        password,
-    }): Json<CreateUpdateShareRequest>,
+    Json(CreateUpdateShareRequest { mut share }): Json<CreateUpdateShareRequest>,
 ) -> ApiResult<Json<ApiResponse<Share>>> {
     // Validate allowed_domains for CSP safety
     if let Some(ref domains) = share.base.allowed_domains {
@@ -154,14 +153,21 @@ async fn create_share(
         }
     }
 
-    // Hash password if provided
-    if let Some(password) = password
-        && !password.is_empty()
+    // Password handling — the field round-trips as the redaction sentinel, so on
+    // create we only hash when the client sent a real plaintext value. Sentinel
+    // and empty both mean "no password".
+    share.base.password_hash = match share
+        .base
+        .password
+        .as_ref()
+        .map(ExposeSecret::expose_secret)
     {
-        share.base.password_hash =
-            Some(hash_password(&password).map_err(|e| ApiError::internal_error(&e.to_string()))?);
-    }
-    share.base.has_password = share.base.password_hash.is_some();
+        Some(plaintext) if !plaintext.is_empty() && plaintext != REDACTED_SECRET_SENTINEL => {
+            Some(hash_password(plaintext).map_err(|e| ApiError::internal_error(&e.to_string()))?)
+        }
+        _ => None,
+    };
+    share.base.redact_password();
 
     share.base.created_by = auth.user_id().ok_or_else(ApiError::user_required)?;
 
@@ -185,10 +191,7 @@ async fn update_share(
     State(state): State<Arc<AppState>>,
     auth: Authorized<RequireVerified<Member>>,
     Path(id): Path<Uuid>,
-    Json(CreateUpdateShareRequest {
-        mut share,
-        password,
-    }): Json<CreateUpdateShareRequest>,
+    Json(CreateUpdateShareRequest { mut share }): Json<CreateUpdateShareRequest>,
 ) -> ApiResult<Json<ApiResponse<Share>>> {
     // Validate allowed_domains for CSP safety
     if let Some(ref domains) = share.base.allowed_domains {
@@ -203,27 +206,25 @@ async fn update_share(
         .await?
         .ok_or_else(|| ApiError::entity_not_found::<Share>(id))?;
 
-    // Handle password field:
-    // - None: preserve existing password_hash
-    // - Some(""): remove password (clear password_hash)
-    // - Some(value): hash and set new password
-    match &password {
-        None => {
-            // Preserve existing password
-            share.base.password_hash = existing.base.password_hash;
+    // Password handling — `share.base.password` round-trips as the redaction
+    // sentinel, so:
+    // - None or Some(sentinel): preserve the existing hash (user didn't touch it).
+    // - Some(""): client explicitly cleared the field → remove the password.
+    // - Some(plaintext): hash and set the new password.
+    share.base.password_hash = match share
+        .base
+        .password
+        .as_ref()
+        .map(ExposeSecret::expose_secret)
+    {
+        None => existing.base.password_hash,
+        Some(v) if v == REDACTED_SECRET_SENTINEL => existing.base.password_hash,
+        Some("") => None,
+        Some(plaintext) => {
+            Some(hash_password(plaintext).map_err(|e| ApiError::internal_error(&e.to_string()))?)
         }
-        Some(password) if password.is_empty() => {
-            // Remove password
-            share.base.password_hash = None;
-        }
-        Some(password) => {
-            // Set new password
-            share.base.password_hash = Some(
-                hash_password(password).map_err(|e| ApiError::internal_error(&e.to_string()))?,
-            );
-        }
-    }
-    share.base.has_password = share.base.password_hash.is_some();
+    };
+    share.base.redact_password();
 
     // Delegate to generic handler
     update_handler::<Share>(

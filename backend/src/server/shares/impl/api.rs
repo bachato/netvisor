@@ -9,7 +9,6 @@ use crate::server::topology::types::views::TopologyView;
 #[derive(Debug, Clone, Deserialize, ToSchema)]
 pub struct CreateUpdateShareRequest {
     pub share: Share,
-    pub password: Option<String>,
 }
 
 /// Public share metadata (returned without authentication)

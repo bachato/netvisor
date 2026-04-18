@@ -44,7 +44,6 @@
 		shares_expirationHelp,
 		shares_namePlaceholder,
 		shares_passwordHelpEdit,
-		shares_passwordHelpNew,
 		shares_passwordPlaceholder,
 		shares_shareThemeDefault,
 		shares_shareThemeLight,
@@ -269,7 +268,7 @@
 						type="password"
 						{field}
 						placeholder={shares_passwordPlaceholder()}
-						helpText={share.has_password ? shares_passwordHelpEdit() : shares_passwordHelpNew()}
+						helpText={shares_passwordHelpEdit()}
 					/>
 				{/snippet}
 			</form.Field>

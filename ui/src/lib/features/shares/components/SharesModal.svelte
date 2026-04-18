@@ -88,7 +88,10 @@
 	function toFormEntry(s: Share) {
 		return {
 			name: s.name || '',
-			password: '',
+			// Mirrors the backend: when a password is set the response carries the
+			// redaction sentinel in `s.password`. Writing it back unchanged tells the
+			// backend to preserve; typing over it sends a new plaintext.
+			password: s.password ?? '',
 			allowed_domains: s.allowed_domains?.join(', ') || '',
 			expires_at: s.expires_at || '',
 			is_enabled: s.is_enabled ?? true,
@@ -180,6 +183,11 @@
 				: null,
 			expires_at: v.expires_at || null,
 			is_enabled: v.is_enabled,
+			// Empty string on a fresh share = "no password"; on an edited share =
+			// "clear the existing password". The backend distinguishes via the
+			// redaction sentinel: untouched entries still carry it, so the server
+			// preserves. We leave the string as-is here.
+			password: v.password,
 			options: {
 				show_zoom_controls: v.show_zoom_controls,
 				show_inspect_panel: v.show_inspect_panel,
@@ -212,15 +220,14 @@
 				const v = formShares[i];
 				if (!v) continue;
 				const shareData = buildShareFromFormValue(share, v);
-				const password = v.password || undefined;
 
 				if (originalShareIds.has(share.id)) {
 					await updateShareMutation.mutateAsync({
 						id: share.id,
-						request: { share: shareData, password }
+						request: { share: shareData }
 					});
 				} else {
-					await createShareMutation.mutateAsync({ share: shareData, password });
+					await createShareMutation.mutateAsync({ share: shareData });
 				}
 			}
 			// Save stays open: trigger a fresh hydration so originalShareIds picks up the

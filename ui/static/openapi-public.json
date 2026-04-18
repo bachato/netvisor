@@ -10366,14 +10366,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-18T18:18:37.151376Z",
-              "id": "eed4de52-76fa-4c2e-a613-2dd47a6b60c6",
+              "created_at": "2026-04-18T19:09:30.033826Z",
+              "id": "92c08dd6-f382-481a-9f20-bb441812ded1",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-18T18:18:37.151376Z"
+              "updated_at": "2026-04-18T19:09:30.033826Z"
             }
           },
           "error": {
@@ -11272,14 +11272,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-18T18:18:37.130829Z",
-                      "id": "32f969d4-c071-4d49-b446-514152797779",
+                      "created_at": "2026-04-18T19:09:30.010865Z",
+                      "id": "6c5417a7-b894-483c-9bfd-0d51839572f5",
                       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-18T18:18:37.130829Z"
+                      "updated_at": "2026-04-18T19:09:30.010865Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -11288,7 +11288,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Cassandra",
+                  "service_definition": "HP Printer",
                   "source": {
                     "type": "Manual"
                   },
@@ -12011,14 +12011,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-18T18:18:37.145724Z",
-                  "id": "14ec3b1b-804d-4c1e-9484-aae9297a61a1",
+                  "created_at": "2026-04-18T19:09:30.028128Z",
+                  "id": "5104d3b1-89aa-4b36-97a3-292ca65fa19b",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-18T18:18:37.145724Z"
+                  "updated_at": "2026-04-18T19:09:30.028128Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -12027,7 +12027,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Cassandra",
+              "service_definition": "HP Printer",
               "source": {
                 "type": "Manual"
               },
@@ -13406,14 +13406,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-18T18:18:37.131224Z",
-          "id": "eb682199-6831-4f87-a4ed-cd6d24547d97",
+          "created_at": "2026-04-18T19:09:30.011401Z",
+          "id": "f7eab34b-7f31-4a04-ac02-6d0dfc51ed2b",
           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-18T18:18:37.131224Z"
+          "updated_at": "2026-04-18T19:09:30.011401Z"
         }
       },
       "BindingBase": {
@@ -13943,7 +13943,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Cassandra",
+              "service_definition": "HP Printer",
               "tags": [],
               "virtualization": null
             }
@@ -14041,12 +14041,6 @@
           "share"
         ],
         "properties": {
-          "password": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "share": {
             "$ref": "#/components/schemas/Share"
           }
@@ -16461,14 +16455,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-18T18:18:37.130277Z",
-                  "id": "89feec59-457b-41e0-b2f8-004a20c90e09",
+                  "created_at": "2026-04-18T19:09:30.010122Z",
+                  "id": "d19ed533-6810-4cf5-a9e2-76a3f2b9d760",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-18T18:18:37.130277Z"
+                  "updated_at": "2026-04-18T19:09:30.010122Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -16477,7 +16471,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Cassandra",
+              "service_definition": "HP Printer",
               "source": {
                 "type": "Manual"
               },
@@ -18704,14 +18698,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-18T18:18:37.116493Z",
-                        "id": "2799fa7d-89f8-4c23-871e-5c77c34b971e",
+                        "created_at": "2026-04-18T19:09:29.996465Z",
+                        "id": "f637998f-6294-42ea-8976-3c82abc039bf",
                         "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-18T18:18:37.116493Z"
+                        "updated_at": "2026-04-18T19:09:29.996465Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -18720,7 +18714,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Cassandra",
+                    "service_definition": "HP Printer",
                     "source": {
                       "type": "Manual"
                     },
@@ -18797,14 +18791,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-18T18:18:37.144092Z",
-                    "id": "f5a53394-728c-4585-8b60-719f9fed9a04",
+                    "created_at": "2026-04-18T19:09:30.026350Z",
+                    "id": "88d2d626-5720-4fcb-90d6-97476aa32fbc",
                     "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-18T18:18:37.144092Z"
+                    "updated_at": "2026-04-18T19:09:30.026350Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -18813,7 +18807,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Cassandra",
+                "service_definition": "HP Printer",
                 "source": {
                   "type": "Manual"
                 },
@@ -20051,14 +20045,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-18T18:18:37.131082Z",
-              "id": "e41605ed-4e0b-4875-93e9-da7f18506786",
+              "created_at": "2026-04-18T19:09:30.011229Z",
+              "id": "7bacc54e-90e2-4ac9-b528-2c38924d1153",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-18T18:18:37.131082Z"
+              "updated_at": "2026-04-18T19:09:30.011229Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -20067,7 +20061,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Cassandra",
+          "service_definition": "HP Printer",
           "source": {
             "type": "Manual"
           },
@@ -20434,11 +20428,6 @@
             ],
             "format": "date-time"
           },
-          "has_password": {
-            "type": "boolean",
-            "description": "Whether a password is set — computed from `password_hash` server-side,\nnever stored in DB. Clients may send any value; handlers overwrite it\nfrom `password_hash` before persisting and before responding.",
-            "readOnly": true
-          },
           "is_enabled": {
             "type": "boolean"
           },
@@ -20451,6 +20440,13 @@
           },
           "options": {
             "$ref": "#/components/schemas/ShareOptions"
+          },
+          "password": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Plaintext password on ingest; redacted sentinel (`\"********\"`) or `None` on egress.\nNever stored — `password_hash` is the DB column. Wrapped in `SecretString` so\n`Debug`/logging shows `[REDACTED]` during the window between request\ndeserialization and hashing."
           },
           "topology_id": {
             "type": "string",
