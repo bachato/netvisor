@@ -100,7 +100,15 @@ if (browser) {
 	});
 }
 
-export const collapseLevel = writable<CollapseLevel>(loadLevelFromStorage() ?? 3);
+const initialStoredLevel = loadLevelFromStorage();
+
+// Module-load snapshot: was a level persisted in localStorage when the tab opened?
+// The pipeline uses this to distinguish a truly fresh session from one where the
+// user previously chose a level. Without this signal, an empty collapsed set on
+// first render gets inferred as level 4 and overrides the default.
+export const hadStoredLevelOnLoad = initialStoredLevel !== null;
+
+export const collapseLevel = writable<CollapseLevel>(initialStoredLevel ?? 3);
 
 if (browser) {
 	let levelInitialized = false;

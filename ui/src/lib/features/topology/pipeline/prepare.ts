@@ -5,6 +5,7 @@ import { LayoutGraph } from '../layout/layout-graph';
 import {
 	collapsedContainers,
 	collapseLevel,
+	hadStoredLevelOnLoad,
 	inferCurrentLevel,
 	computeCollapsedForLevel,
 	buildElementToContainer,
@@ -14,6 +15,12 @@ import { elevateEdgesToContainers } from '../layout/edge-elevation';
 import { containerTypes } from '$lib/shared/stores/metadata';
 import { activeView, topologyOptions } from '../queries';
 import { buildTopologyParentIndex } from '../topology-parent-index';
+
+// Tab-scoped guard: only apply the "fresh session" default-level seeding on the
+// very first pipeline run of this tab. Subsequent runs (topology switches,
+// re-renders) always use the inferrer so a user's explicit level (e.g. after
+// stepExpand to 4) is respected on later navigations.
+let defaultsAppliedThisSession = false;
 
 function getStructureKey(topo: Topology): string {
 	const nodeKeys = topo.nodes
@@ -67,16 +74,38 @@ export function prepareTopologyData(
 
 	let collapsed = get(collapsedContainers);
 
-	// Infer collapse level from persisted collapsed state on first load
+	// Seed collapse state on first topology render.
+	//
+	// Truly fresh session (no stored level, first pipeline run this tab):
+	// apply the default level's collapsed set so the initial view matches
+	// the intended default instead of being inferred as level 4 from an
+	// empty collapsed set.
+	//
+	// Otherwise: infer the level from the persisted collapsed set so any
+	// prior user choice (including an explicit stepExpand to 4) is respected.
 	if (!state.collapseLevelInferred) {
 		state.collapseLevelInferred = true;
-		const inferred = inferCurrentLevel(
-			collapsed,
-			topology.nodes,
-			containerTypes,
-			getInfrastructureRuleId()
-		);
-		collapseLevel.set(inferred);
+		if (!defaultsAppliedThisSession && !hadStoredLevelOnLoad) {
+			const defaultLevel = get(collapseLevel);
+			const defaultCollapsed = computeCollapsedForLevel(
+				defaultLevel,
+				topology.nodes,
+				containerTypes,
+				getInfrastructureRuleId()
+			);
+			collapsedContainers.set(defaultCollapsed);
+			collapsed = defaultCollapsed;
+			collapseLevel.set(defaultLevel);
+		} else {
+			const inferred = inferCurrentLevel(
+				collapsed,
+				topology.nodes,
+				containerTypes,
+				getInfrastructureRuleId()
+			);
+			collapseLevel.set(inferred);
+		}
+		defaultsAppliedThisSession = true;
 	}
 
 	// On view switch, apply the current collapse level to the new view's containers
