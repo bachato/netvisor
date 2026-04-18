@@ -10366,14 +10366,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-18T15:49:08.322496Z",
-              "id": "31e4efae-ee51-43a8-bc39-567d010a090e",
+              "created_at": "2026-04-18T14:12:05.071468Z",
+              "id": "ac0bc1f1-dcc9-490c-8000-dbd457e1378c",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-18T15:49:08.322496Z"
+              "updated_at": "2026-04-18T14:12:05.071468Z"
             }
           },
           "error": {
@@ -11272,14 +11272,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-18T15:49:08.301396Z",
-                      "id": "f292787b-87c9-4ec0-982d-fff158487465",
+                      "created_at": "2026-04-18T14:12:05.054689Z",
+                      "id": "74cfe877-f184-4454-be57-a94bc5fcea82",
                       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-18T15:49:08.301396Z"
+                      "updated_at": "2026-04-18T14:12:05.054689Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -11288,7 +11288,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Zabbix Agent",
+                  "service_definition": "Nest Protect",
                   "source": {
                     "type": "Manual"
                   },
@@ -12011,14 +12011,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-18T15:49:08.316836Z",
-                  "id": "43c3667b-7d2d-4096-82a3-369e7cad9e98",
+                  "created_at": "2026-04-18T14:12:05.066762Z",
+                  "id": "ba2aab01-662b-47ec-8f5d-77254812c789",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-18T15:49:08.316836Z"
+                  "updated_at": "2026-04-18T14:12:05.066762Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -12027,7 +12027,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Zabbix Agent",
+              "service_definition": "Nest Protect",
               "source": {
                 "type": "Manual"
               },
@@ -12122,44 +12122,6 @@
                 }
               }
             ]
-          },
-          "error": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "meta": {
-            "$ref": "#/components/schemas/ApiMeta"
-          },
-          "success": {
-            "type": "boolean"
-          }
-        }
-      },
-      "ApiResponse_ShareAccessTokenResponse": {
-        "type": "object",
-        "required": [
-          "success",
-          "meta"
-        ],
-        "properties": {
-          "data": {
-            "type": "object",
-            "description": "Access token returned after successful password verification.\n\nThe token is an HS256 JWT tied to the share's `password_hash` — changing\nthe share password implicitly invalidates all outstanding tokens.",
-            "required": [
-              "access_token",
-              "expires_at"
-            ],
-            "properties": {
-              "access_token": {
-                "type": "string"
-              },
-              "expires_at": {
-                "type": "string",
-                "format": "date-time"
-              }
-            }
           },
           "error": {
             "type": [
@@ -13147,6 +13109,30 @@
           }
         }
       },
+      "ApiResponse_bool": {
+        "type": "object",
+        "required": [
+          "success",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "boolean"
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
       "ApiResponse_u32": {
         "type": "object",
         "required": [
@@ -13406,14 +13392,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-18T15:49:08.301840Z",
-          "id": "4b866953-94c6-49bb-a0e5-71cebbbee719",
+          "created_at": "2026-04-18T14:12:05.055030Z",
+          "id": "a0b59459-1f9e-4c34-8a57-32278cf20afc",
           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-18T15:49:08.301840Z"
+          "updated_at": "2026-04-18T14:12:05.055030Z"
         }
       },
       "BindingBase": {
@@ -13943,7 +13929,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Zabbix Agent",
+              "service_definition": "Nest Protect",
               "tags": [],
               "virtualization": null
             }
@@ -16461,14 +16447,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-18T15:49:08.300768Z",
-                  "id": "86cf0086-a0ee-4d78-916a-3d7805c5bd14",
+                  "created_at": "2026-04-18T14:12:05.054212Z",
+                  "id": "be53bbc7-e7c7-4186-8689-8cba8336df25",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-18T15:49:08.300768Z"
+                  "updated_at": "2026-04-18T14:12:05.054212Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -16477,7 +16463,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Zabbix Agent",
+              "service_definition": "Nest Protect",
               "source": {
                 "type": "Manual"
               },
@@ -18704,14 +18690,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-18T15:49:08.286660Z",
-                        "id": "bbe0a8c3-a6de-4bd7-8da4-cd71b2214e26",
+                        "created_at": "2026-04-18T14:12:05.043305Z",
+                        "id": "5a47dd77-f6eb-48f7-9fe9-2b33bb2258eb",
                         "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-18T15:49:08.286660Z"
+                        "updated_at": "2026-04-18T14:12:05.043305Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -18720,7 +18706,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Zabbix Agent",
+                    "service_definition": "Nest Protect",
                     "source": {
                       "type": "Manual"
                     },
@@ -18797,14 +18783,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-18T15:49:08.315204Z",
-                    "id": "401b32be-3a8d-43f6-81ec-638141e19fc1",
+                    "created_at": "2026-04-18T14:12:05.065466Z",
+                    "id": "4c18fe1d-6984-4f05-8155-33ed4fe93491",
                     "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-18T15:49:08.315204Z"
+                    "updated_at": "2026-04-18T14:12:05.065466Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -18813,7 +18799,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Zabbix Agent",
+                "service_definition": "Nest Protect",
                 "source": {
                   "type": "Manual"
                 },
@@ -20051,14 +20037,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-18T15:49:08.301684Z",
-              "id": "e6424c38-e4ab-486a-b44a-030cfb9e7519",
+              "created_at": "2026-04-18T14:12:05.054914Z",
+              "id": "2d6eefdb-b793-4756-8b74-4656bedf8088",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-18T15:49:08.301684Z"
+              "updated_at": "2026-04-18T14:12:05.054914Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -20067,7 +20053,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Zabbix Agent",
+          "service_definition": "Nest Protect",
           "source": {
             "type": "Manual"
           },
@@ -20372,23 +20358,6 @@
             }
           }
         ]
-      },
-      "ShareAccessTokenResponse": {
-        "type": "object",
-        "description": "Access token returned after successful password verification.\n\nThe token is an HS256 JWT tied to the share's `password_hash` — changing\nthe share password implicitly invalidates all outstanding tokens.",
-        "required": [
-          "access_token",
-          "expires_at"
-        ],
-        "properties": {
-          "access_token": {
-            "type": "string"
-          },
-          "expires_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
       },
       "ShareBase": {
         "type": "object",
@@ -21211,8 +21180,8 @@
               "type": "string",
               "description": "Which topology view is being rendered",
               "enum": [
-                "L3Logical",
                 "L2Physical",
+                "L3Logical",
                 "Workloads",
                 "Application"
               ]
@@ -21239,8 +21208,8 @@
               "type": "string",
               "description": "Which topology view is being rendered",
               "enum": [
-                "L3Logical",
                 "L2Physical",
+                "L3Logical",
                 "Workloads",
                 "Application"
               ]
@@ -21285,8 +21254,8 @@
         "type": "string",
         "description": "Which topology view is being rendered",
         "enum": [
-          "L3Logical",
           "L2Physical",
+          "L3Logical",
           "Workloads",
           "Application"
         ]

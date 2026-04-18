@@ -1,5 +1,66 @@
 [
   {
+    "id": "L2Physical",
+    "name": "L2 Physical",
+    "description": "Interfaces and physical links between hosts",
+    "category": null,
+    "icon": "cable",
+    "color": "Green",
+    "metadata": {
+      "edge_view_configs": {
+        "ContainerRuntime": {
+          "type": "disabled"
+        },
+        "HubAndSpoke": {
+          "type": "disabled"
+        },
+        "Hypervisor": {
+          "type": "disabled"
+        },
+        "PhysicalLink": {
+          "affects_layout": true,
+          "default_visibility": "visible",
+          "highlight_behavior": "when_visible",
+          "show_directionality": false,
+          "stroke": "solid",
+          "type": "active",
+          "will_target_container": false
+        },
+        "RequestPath": {
+          "type": "disabled"
+        },
+        "SameHost": {
+          "affects_layout": false,
+          "default_visibility": "hidden",
+          "highlight_behavior": "when_visible",
+          "show_directionality": false,
+          "stroke": "dashed",
+          "type": "active",
+          "will_target_container": false
+        }
+      },
+      "element_config": {
+        "container_entity": "Host",
+        "element_entities": [
+          "Interface"
+        ],
+        "inline_entities": []
+      },
+      "inspector_config": {
+        "container_sections": [
+          "Identity",
+          "ElementSummary"
+        ],
+        "dependency_creation": null,
+        "element_sections": [
+          "Identity",
+          "IfEntryData"
+        ],
+        "show_application_picker": false
+      }
+    }
+  },
+  {
     "id": "L3Logical",
     "name": "L3 Logical",
     "description": "IP addresses and connectivity across subnets",
@@ -84,67 +145,6 @@
           "IfEntryData",
           "Services",
           "OtherInterfaces"
-        ],
-        "show_application_picker": false
-      }
-    }
-  },
-  {
-    "id": "L2Physical",
-    "name": "L2 Physical",
-    "description": "Interfaces and physical links between hosts",
-    "category": null,
-    "icon": "cable",
-    "color": "Green",
-    "metadata": {
-      "edge_view_configs": {
-        "ContainerRuntime": {
-          "type": "disabled"
-        },
-        "HubAndSpoke": {
-          "type": "disabled"
-        },
-        "Hypervisor": {
-          "type": "disabled"
-        },
-        "PhysicalLink": {
-          "affects_layout": true,
-          "default_visibility": "visible",
-          "highlight_behavior": "when_visible",
-          "show_directionality": false,
-          "stroke": "solid",
-          "type": "active",
-          "will_target_container": false
-        },
-        "RequestPath": {
-          "type": "disabled"
-        },
-        "SameHost": {
-          "affects_layout": false,
-          "default_visibility": "hidden",
-          "highlight_behavior": "when_visible",
-          "show_directionality": false,
-          "stroke": "dashed",
-          "type": "active",
-          "will_target_container": false
-        }
-      },
-      "element_config": {
-        "container_entity": "Host",
-        "element_entities": [
-          "Interface"
-        ],
-        "inline_entities": []
-      },
-      "inspector_config": {
-        "container_sections": [
-          "Identity",
-          "ElementSummary"
-        ],
-        "dependency_creation": null,
-        "element_sections": [
-          "Identity",
-          "IfEntryData"
         ],
         "show_application_picker": false
       }

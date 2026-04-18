@@ -35,9 +35,9 @@ use super::edges::{
     IntoStaticStr,
 )]
 pub enum TopologyView {
+    L2Physical,
     #[default]
     L3Logical,
-    L2Physical,
     Workloads,
     Application,
 }
