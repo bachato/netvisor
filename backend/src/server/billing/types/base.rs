@@ -252,6 +252,15 @@ impl BillingPlan {
         matches!(self, BillingPlan::Demo(_))
     }
 
+    /// Plans where the customer hosts Scanopy themselves and Stripe is not in
+    /// the loop. Use this to skip checks that only make sense for cloud plans.
+    pub fn is_self_hosted(&self) -> bool {
+        matches!(
+            self,
+            BillingPlan::Community(_) | BillingPlan::CommercialSelfHosted(_)
+        )
+    }
+
     pub fn host_limit(&self) -> Option<u64> {
         self.config().included_hosts
     }

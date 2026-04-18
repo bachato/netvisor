@@ -61,6 +61,8 @@ export const ERROR_CODES = {
 	daemon_version_too_old:
 		'Daemon version {daemon_version} is older than server version {server_version}. Update the daemon to match the server version.',
 	user_email_in_use: "Email '{email}' is already in use",
+	organization_has_active_subscription:
+		'Cancel your subscription before deleting your organization',
 	billing_payment_required: 'Payment is required to continue',
 	billing_plan_limit_reached: "You've reached the limit of {limit} {resource} on your current plan",
 	billing_subscription_required: 'Active subscription required',
@@ -133,6 +135,7 @@ export interface ErrorParams {
 	daemon_not_registered: Record<string, never>;
 	daemon_version_too_old: { daemon_version: string | number; server_version: string | number };
 	user_email_in_use: { email: string | number };
+	organization_has_active_subscription: Record<string, never>;
 	billing_payment_required: Record<string, never>;
 	billing_plan_limit_reached: { limit: string | number; resource: string | number };
 	billing_subscription_required: Record<string, never>;

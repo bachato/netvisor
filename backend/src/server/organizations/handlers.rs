@@ -1,6 +1,7 @@
 use crate::server::auth::middleware::auth::AuthenticatedEntity;
 use crate::server::auth::middleware::permissions::{Authorized, IsUser, Member, Owner};
 use crate::server::auth::service::hash_password;
+use crate::server::billing::service::BillingService;
 use crate::server::billing::types::base::BillingPlan;
 use crate::server::bindings::r#impl::base::Binding;
 use crate::server::config::AppState;
@@ -14,6 +15,7 @@ use crate::server::shared::storage::traits::{Entity, Storable, Storage};
 use crate::server::shared::types::api::ApiResponse;
 use crate::server::shared::types::api::ApiResult;
 use crate::server::shared::types::api::{ApiError, ApiErrorResponse, EmptyApiResponse};
+use crate::server::shared::types::error_codes::ErrorCode;
 use crate::server::topology::types::base::Topology;
 use crate::server::users::r#impl::base::{User, UserBase};
 use crate::server::users::r#impl::permissions::UserOrgPermissions;
@@ -307,6 +309,13 @@ pub async fn delete_organization(
 
     if org.id != user_org_id {
         return Err(ApiError::permission_denied());
+    }
+
+    if BillingService::has_active_paid_subscription(&org) {
+        return Err(ApiError::coded(
+            axum::http::StatusCode::CONFLICT,
+            ErrorCode::OrganizationHasActiveSubscription,
+        ));
     }
 
     let initiator_user_id = auth.user_id();

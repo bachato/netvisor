@@ -1721,6 +1721,28 @@ impl BillingService {
         Ok(session.url)
     }
 
+    /// Whether an org still has an active paid Stripe subscription that will
+    /// keep billing them. Used to block destructive actions (e.g. org delete)
+    /// that would leave Stripe charging an unreachable customer.
+    ///
+    /// Returns `false` for:
+    /// - Free / self-hosted (Community + CommercialSelfHosted) plans (no Stripe subscription)
+    /// - Subscriptions where `cancel_at_period_end` was set (`plan_status == "pending_cancellation"`)
+    /// - Terminal Stripe statuses (`canceled`, `incomplete`, etc.)
+    pub fn has_active_paid_subscription(org: &Organization) -> bool {
+        let plan = match &org.base.plan {
+            Some(p) => p,
+            None => return false,
+        };
+        if plan.is_free() || plan.is_self_hosted() {
+            return false;
+        }
+        matches!(
+            org.base.plan_status.as_deref(),
+            Some("active") | Some("trialing") | Some("past_due")
+        )
+    }
+
     /// Schedule a downgrade to Free at the end of the billing cycle.
     ///
     /// Sets `cancel_at_period_end: true` on the active subscription. Stripe keeps the
@@ -2075,5 +2097,94 @@ impl BillingService {
             .await?;
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::server::billing::plans::{
+        get_commercial_self_hosted_plan, get_community_plan, get_free_plan,
+    };
+
+    fn org_with(plan: Option<BillingPlan>, status: Option<&str>) -> Organization {
+        let mut org = Organization::default();
+        org.base.plan = plan;
+        org.base.plan_status = status.map(|s| s.to_string());
+        org
+    }
+
+    fn pro_plan() -> BillingPlan {
+        BillingPlan::Pro(crate::server::billing::types::base::PlanConfig {
+            base_cents: 4999,
+            rate: crate::server::billing::types::base::BillingRate::Month,
+            trial_days: 14,
+            seat_cents: None,
+            network_cents: Some(1000),
+            host_cents: None,
+            included_seats: Some(1),
+            included_networks: Some(3),
+            included_hosts: None,
+        })
+    }
+
+    #[test]
+    fn no_plan_is_not_active() {
+        let org = org_with(None, None);
+        assert!(!BillingService::has_active_paid_subscription(&org));
+    }
+
+    #[test]
+    fn free_plan_is_not_active() {
+        let org = org_with(Some(get_free_plan()), Some("active"));
+        assert!(!BillingService::has_active_paid_subscription(&org));
+    }
+
+    #[test]
+    fn community_self_hosted_is_not_active() {
+        let org = org_with(Some(get_community_plan()), Some("active"));
+        assert!(!BillingService::has_active_paid_subscription(&org));
+    }
+
+    #[test]
+    fn commercial_self_hosted_is_not_active() {
+        let org = org_with(Some(get_commercial_self_hosted_plan()), Some("active"));
+        assert!(!BillingService::has_active_paid_subscription(&org));
+    }
+
+    #[test]
+    fn paid_active_is_active() {
+        let org = org_with(Some(pro_plan()), Some("active"));
+        assert!(BillingService::has_active_paid_subscription(&org));
+    }
+
+    #[test]
+    fn paid_trialing_is_active() {
+        let org = org_with(Some(pro_plan()), Some("trialing"));
+        assert!(BillingService::has_active_paid_subscription(&org));
+    }
+
+    #[test]
+    fn paid_past_due_is_active() {
+        let org = org_with(Some(pro_plan()), Some("past_due"));
+        assert!(BillingService::has_active_paid_subscription(&org));
+    }
+
+    #[test]
+    fn paid_pending_cancellation_is_not_active() {
+        let org = org_with(Some(pro_plan()), Some("pending_cancellation"));
+        assert!(!BillingService::has_active_paid_subscription(&org));
+    }
+
+    #[test]
+    fn paid_canceled_is_not_active() {
+        let org = org_with(Some(pro_plan()), Some("canceled"));
+        assert!(!BillingService::has_active_paid_subscription(&org));
+    }
+
+    #[test]
+    fn paid_no_status_is_not_active() {
+        let org = org_with(Some(pro_plan()), None);
+        assert!(!BillingService::has_active_paid_subscription(&org));
     }
 }

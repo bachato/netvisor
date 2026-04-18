@@ -37,7 +37,6 @@
 		common_tryAgainLater,
 		settings_org_delete,
 		settings_org_deleteConfirm,
-		settings_org_deleteFailed,
 		settings_org_deleteHelp,
 		settings_org_deleteSuccess,
 		settings_org_deleteTypeName,
@@ -156,7 +155,8 @@
 			pushSuccess(settings_org_deleteSuccess());
 			await goto(resolve('/onboarding'));
 		} catch {
-			pushError(settings_org_deleteFailed());
+			// API client middleware auto-toasts the translated error message
+			// (e.g. "Cancel your subscription before deleting your organization").
 			showDeleteConfirm = false;
 		}
 	}

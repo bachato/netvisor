@@ -170,6 +170,10 @@ pub enum ErrorCode {
     /// Email is already in use
     UserEmailInUse { email: String },
 
+    // === Organizations ===
+    /// Organization cannot be deleted while it has an active paid subscription
+    OrganizationHasActiveSubscription,
+
     // === Billing ===
     /// Payment is required to continue
     BillingPaymentRequired,
@@ -306,6 +310,11 @@ impl ErrorCode {
             // User
             Self::UserEmailInUse { .. } => "Email '{email}' is already in use",
 
+            // Organizations
+            Self::OrganizationHasActiveSubscription => {
+                "Cancel your subscription before deleting your organization"
+            }
+
             // Billing
             Self::BillingPaymentRequired => "Payment is required to continue",
             Self::BillingPlanLimitReached { .. } => {
@@ -366,6 +375,7 @@ impl ErrorCode {
             | Self::DaemonIdentityMismatch
             | Self::DaemonStandby
             | Self::DaemonNotRegistered
+            | Self::OrganizationHasActiveSubscription
             | Self::BillingPaymentRequired
             | Self::BillingSubscriptionRequired
             | Self::BillingSetupIncomplete
