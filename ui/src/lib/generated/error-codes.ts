@@ -45,6 +45,7 @@ export const ERROR_CODES = {
 	networks_access_denied: "You don't have access to network '{network}'",
 	share_password_required: 'Password required for this share',
 	share_password_incorrect: 'Incorrect password',
+	share_token_invalid: 'Access token is invalid or expired',
 	share_domain_not_allowed: "Domain '{domain}' not allowed",
 	invite_already_accepted: 'This invite has already been accepted',
 	invite_email_mismatch: "Invite email doesn't match your account",
@@ -61,6 +62,8 @@ export const ERROR_CODES = {
 	daemon_version_too_old:
 		'Daemon version {daemon_version} is older than server version {server_version}. Update the daemon to match the server version.',
 	user_email_in_use: "Email '{email}' is already in use",
+	organization_has_active_subscription:
+		'Cancel your subscription before deleting your organization',
 	billing_payment_required: 'Payment is required to continue',
 	billing_plan_limit_reached: "You've reached the limit of {limit} {resource} on your current plan",
 	billing_subscription_required: 'Active subscription required',
@@ -120,6 +123,7 @@ export interface ErrorParams {
 	networks_access_denied: { network: string | number };
 	share_password_required: Record<string, never>;
 	share_password_incorrect: Record<string, never>;
+	share_token_invalid: Record<string, never>;
 	share_domain_not_allowed: { domain: string | number };
 	invite_already_accepted: Record<string, never>;
 	invite_email_mismatch: Record<string, never>;
@@ -133,6 +137,7 @@ export interface ErrorParams {
 	daemon_not_registered: Record<string, never>;
 	daemon_version_too_old: { daemon_version: string | number; server_version: string | number };
 	user_email_in_use: { email: string | number };
+	organization_has_active_subscription: Record<string, never>;
 	billing_payment_required: Record<string, never>;
 	billing_plan_limit_reached: { limit: string | number; resource: string | number };
 	billing_subscription_required: Record<string, never>;

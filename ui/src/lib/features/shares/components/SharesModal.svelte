@@ -12,8 +12,9 @@
 		type ShareDisplayContext
 	} from '$lib/shared/components/forms/selection/display/ShareDisplay.svelte';
 	import { Share2 } from 'lucide-svelte';
+	import { v4 as uuidv4 } from 'uuid';
 	import type { Share } from '../types/base';
-	import { createEmptyShare } from '../types/base';
+	import { createEmptyShare, defaultShareOptions } from '../types/base';
 	import {
 		useSharesQuery,
 		useCreateShareMutation,
@@ -72,14 +73,10 @@
 		return billingPlans.getMetadata(org.plan.type).features.share_views;
 	});
 
-	// Local reactive copy of shares for this topology
+	// Local state — single source of truth for the list during the modal's lifetime.
 	let sharesData: Share[] = $state([]);
-
-	// Sync from query when data changes
-	$effect(() => {
-		const queryShares = (sharesQuery.data ?? []).filter((s) => s.topology_id === topologyId);
-		sharesData = queryShares;
-	});
+	let originalShareIds = $state(new Set<string>());
+	let hydrated = $state(false);
 
 	// Mutations
 	const createShareMutation = useCreateShareMutation();
@@ -88,32 +85,44 @@
 
 	let saving = $state(false);
 
-	// Build form default values from current shares (nested structure for TanStack Form)
-	function getFormDefaults() {
+	function toFormEntry(s: Share) {
 		return {
-			shares: sharesData.map((s) => ({
-				name: s.name || '',
-				password: '',
-				allowed_domains: s.allowed_domains?.join(', ') || '',
-				expires_at: s.expires_at || '',
-				is_enabled: s.is_enabled ?? true,
-				show_zoom_controls: s.options?.show_zoom_controls ?? true,
-				show_inspect_panel: s.options?.show_inspect_panel ?? true,
-				show_export_button: s.options?.show_export_button ?? true,
-				show_minimap: s.options?.show_minimap ?? true,
-				embed_width: '800',
-				embed_height: '600'
-			}))
+			name: s.name || '',
+			password: '',
+			allowed_domains: s.allowed_domains?.join(', ') || '',
+			expires_at: s.expires_at || '',
+			is_enabled: s.is_enabled ?? true,
+			show_zoom_controls: s.options?.show_zoom_controls ?? defaultShareOptions.show_zoom_controls,
+			show_inspect_panel: s.options?.show_inspect_panel ?? defaultShareOptions.show_inspect_panel,
+			show_export_button: s.options?.show_export_button ?? defaultShareOptions.show_export_button,
+			show_minimap: s.options?.show_minimap ?? defaultShareOptions.show_minimap,
+			embed_width: '800',
+			embed_height: '600'
 		};
 	}
 
-	// Parent-owned form
+	// Parent-owned form — starts empty; hydration happens in the isOpen effect.
 	const form = createForm(() => ({
-		defaultValues: getFormDefaults(),
+		defaultValues: { shares: [] as ReturnType<typeof toFormEntry>[] },
 		onSubmit: async () => {
 			// Submission handled by handleSave
 		}
 	}));
+
+	// One-time hydration on open: seed sharesData + form + snapshot of server IDs.
+	// Reset when the modal closes so the next open re-hydrates from the latest cache.
+	$effect(() => {
+		if (!isOpen) {
+			hydrated = false;
+			return;
+		}
+		if (hydrated || sharesQuery.isPending) return;
+		const queryShares = (sharesQuery.data ?? []).filter((s) => s.topology_id === topologyId);
+		sharesData = queryShares;
+		originalShareIds = new Set(queryShares.map((s) => s.id));
+		form.reset({ shares: queryShares.map(toFormEntry) });
+		hydrated = true;
+	});
 
 	function handleShareChange(updatedShare: Share, index: number) {
 		const updated = [...sharesData];
@@ -121,28 +130,19 @@
 		sharesData = updated;
 	}
 
-	async function handleCreateNew() {
-		const newShare = createEmptyShare(topologyId, networkId);
-		newShare.created_by = currentUser?.id || newShare.created_by;
-
-		try {
-			await createShareMutation.mutateAsync({
-				share: newShare,
-				password: undefined
-			});
-		} catch (error) {
-			pushError(error instanceof Error ? error.message : common_failedToSave());
-		}
+	function handleCreateNew() {
+		const newShare: Share = {
+			...createEmptyShare(topologyId, networkId),
+			id: uuidv4(),
+			created_by: currentUser?.id ?? ''
+		};
+		sharesData = [...sharesData, newShare];
+		form.setFieldValue('shares', sharesData.map(toFormEntry));
 	}
 
-	async function handleRemove(index: number) {
-		const share = sharesData[index];
-		if (!share) return;
-		try {
-			await deleteShareMutation.mutateAsync(share.id);
-		} catch (error) {
-			pushError(error instanceof Error ? error.message : common_failedToSave());
-		}
+	function handleRemove(index: number) {
+		sharesData = sharesData.filter((_, i) => i !== index);
+		form.setFieldValue('shares', sharesData.map(toFormEntry));
 	}
 
 	// Resolve field paths to human-readable names for validation errors
@@ -158,47 +158,63 @@
 		return fieldPath.replace(/_/g, ' ');
 	}
 
+	function buildShareFromFormValue(share: Share, v: ReturnType<typeof toFormEntry>): Share {
+		return {
+			id: share.id,
+			name: v.name?.trim() || '',
+			topology_id: share.topology_id,
+			network_id: share.network_id,
+			created_by: currentUser?.id || share.created_by,
+			allowed_domains: v.allowed_domains?.trim()
+				? v.allowed_domains
+						.split(',')
+						.map((d) => d.trim())
+						.filter(Boolean)
+				: null,
+			expires_at: v.expires_at || null,
+			is_enabled: v.is_enabled,
+			options: {
+				show_zoom_controls: v.show_zoom_controls,
+				show_inspect_panel: v.show_inspect_panel,
+				show_export_button: v.show_export_button,
+				show_minimap: v.show_minimap
+			},
+			enabled_views: share.enabled_views
+		} as Share;
+	}
+
 	async function handleSave() {
 		const isValid = await validateForm(form, undefined, resolveFieldName);
 		if (!isValid) return;
 
 		saving = true;
 		try {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const formShares = (form.state.values as any).shares;
+			const formShares = (form.state.values.shares ?? []) as ReturnType<typeof toFormEntry>[];
+			const currentIds = new Set(sharesData.map((s) => s.id));
+
+			// Deletes: in snapshot but not in current
+			for (const id of originalShareIds) {
+				if (!currentIds.has(id)) {
+					await deleteShareMutation.mutateAsync(id);
+				}
+			}
+
+			// Creates + updates, in list order
 			for (let i = 0; i < sharesData.length; i++) {
 				const share = sharesData[i];
 				const v = formShares[i];
 				if (!v) continue;
+				const shareData = buildShareFromFormValue(share, v);
+				const password = v.password || undefined;
 
-				const shareData = {
-					id: share.id,
-					name: (v.name as string)?.trim() || '',
-					topology_id: share.topology_id,
-					network_id: share.network_id,
-					created_by: currentUser?.id || share.created_by,
-					allowed_domains: (v.allowed_domains as string)?.trim()
-						? (v.allowed_domains as string)
-								.split(',')
-								.map((d: string) => d.trim())
-								.filter(Boolean)
-						: null,
-					expires_at: (v.expires_at as string) || null,
-					is_enabled: v.is_enabled as boolean,
-					options: {
-						show_zoom_controls: v.show_zoom_controls as boolean,
-						show_inspect_panel: v.show_inspect_panel as boolean,
-						show_export_button: v.show_export_button as boolean,
-						show_minimap: v.show_minimap as boolean
-					},
-					enabled_views: share.enabled_views
-				} as Share;
-
-				const password = (v.password as string) || undefined;
-				await updateShareMutation.mutateAsync({
-					id: share.id,
-					request: { share: shareData, password }
-				});
+				if (originalShareIds.has(share.id)) {
+					await updateShareMutation.mutateAsync({
+						id: share.id,
+						request: { share: shareData, password }
+					});
+				} else {
+					await createShareMutation.mutateAsync({ share: shareData, password });
+				}
 			}
 			onClose();
 		} catch (error) {
