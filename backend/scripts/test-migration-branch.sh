@@ -83,8 +83,10 @@ echo "=== Creating Neon branch: $BRANCH_NAME ==="
     --expiration-date "$EXPIRES_AT"
 
 echo
-echo "=== Parent of new branch (verify this is your PROD branch) ==="
-"${NEONCTL[@]}" branches get "$BRANCH_NAME" --project-id "$NEON_PROJECT_ID"
+echo "=== Parent of new branch (verify this matches your PROD branch id from the list above) ==="
+"${NEONCTL[@]}" branches get "$BRANCH_NAME" --project-id "$NEON_PROJECT_ID" --output json \
+    | grep -E '"(name|id|parent_id|parent_lsn)"' \
+    | sed 's/^/  /'
 
 DATABASE_URL="$("${NEONCTL[@]}" connection-string "$BRANCH_NAME" --project-id "$NEON_PROJECT_ID")"
 export DATABASE_URL
