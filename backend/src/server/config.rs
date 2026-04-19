@@ -21,6 +21,7 @@ use tower_sessions_sqlx_store::PostgresStore;
 use utoipa::ToSchema;
 
 use crate::server::shared::storage::factory::StorageFactory;
+use sqlx::PgPool;
 
 #[derive(Parser)]
 #[command(name = "scanopy-server")]
@@ -334,6 +335,7 @@ pub struct AppState {
     pub services: ServiceFactory,
     pub session_store: SessionManagerLayer<PostgresStore>,
     pub license_service: Arc<LicenseService>,
+    pub pool: PgPool,
 }
 
 impl AppState {
@@ -353,6 +355,7 @@ impl AppState {
             services,
             session_store: storage.sessions,
             license_service,
+            pool: storage.pool,
         }))
     }
 }

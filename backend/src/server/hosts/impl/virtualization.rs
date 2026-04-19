@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
-use strum_macros::IntoStaticStr;
+use strum_macros::{IntoStaticStr, VariantNames};
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
@@ -13,7 +13,9 @@ use crate::server::shared::{
     },
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, IntoStaticStr, ToSchema)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, IntoStaticStr, VariantNames, ToSchema,
+)]
 #[schema(title = "HostVirtualization")]
 #[serde(tag = "type", content = "details")]
 pub enum HostVirtualization {

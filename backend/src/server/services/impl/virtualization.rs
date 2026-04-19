@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
-use strum_macros::{EnumDiscriminants, IntoStaticStr};
+use strum_macros::{EnumDiscriminants, IntoStaticStr, VariantNames};
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
@@ -23,6 +23,7 @@ use crate::server::shared::{
     Deserialize,
     IntoStaticStr,
     EnumDiscriminants,
+    VariantNames,
     ToSchema,
 )]
 #[schema(title = "ServiceVirtualization")]

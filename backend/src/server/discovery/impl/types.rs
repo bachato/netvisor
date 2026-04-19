@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use serde::Serialize;
 use std::fmt::Display;
-use strum::{Display, EnumDiscriminants, EnumIter, IntoStaticStr};
+use strum::{Display, EnumDiscriminants, EnumIter, IntoStaticStr, VariantNames};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -28,6 +28,7 @@ use crate::server::{
     IntoStaticStr,
     EnumDiscriminants,
     EnumIter,
+    VariantNames,
     ToSchema,
 )]
 #[serde(tag = "type")]
@@ -140,7 +141,7 @@ pub enum HostNamingFallback {
     BestService,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, VariantNames, ToSchema)]
 #[serde(tag = "type")]
 pub enum RunType {
     #[schema(title = "Scheduled")]

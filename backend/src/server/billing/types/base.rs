@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::hash::Hash;
 use stripe_product::price::CreatePriceRecurringInterval;
-use strum::{Display, EnumDiscriminants, EnumIter, IntoDiscriminant, IntoStaticStr};
+use strum::{Display, EnumDiscriminants, EnumIter, IntoDiscriminant, IntoStaticStr, VariantNames};
 use utoipa::ToSchema;
 
 #[derive(
@@ -22,6 +22,7 @@ use utoipa::ToSchema;
     IntoStaticStr,
     EnumIter,
     EnumDiscriminants,
+    VariantNames,
     Eq,
     ToSchema,
 )]

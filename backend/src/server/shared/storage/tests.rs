@@ -461,3 +461,281 @@ pub async fn test_struct_deserialization_backward_compatibility() {
         panic!("No database fixture found at {}", SERVER_DB_FIXTURE);
     }
 }
+
+/// Compares each entity's `to_params()` column list against the live
+/// `information_schema.columns` for its table. Fails on:
+///   - Columns in `to_params()` that don't exist in the live schema (storage
+///     would SELECT/INSERT a missing column).
+///   - Live NOT-NULL columns without a default that aren't in `to_params()`
+///     (entity INSERTs would omit a required column).
+///
+/// Complement to the release-time container harness — that catches drift at
+/// runtime against the previously-deployed binary, this catches code/schema
+/// drift within the current binary at `cargo test --lib` time.
+///
+/// `#[ignore]`-gated because it spins up a testcontainer; opt in with:
+///   `cargo test --lib test_entity_columns_match_live_schema -- --ignored`
+#[tokio::test]
+#[ignore]
+pub async fn test_entity_columns_match_live_schema() {
+    use crate::server::shared::storage::traits::Storable;
+    use crate::tests::setup_test_db;
+
+    let (pool, _database_url, _container) = setup_test_db().await;
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .expect("Failed to run migrations");
+
+    /// For a Storable type, fetch the live column spec for its table and
+    /// compare against what to_params() produces. Pushes human-readable
+    /// failure strings into `failures`.
+    async fn check_entity<T: Storable>(pool: &sqlx::PgPool, failures: &mut Vec<String>) {
+        let table = T::table_name();
+        let insert_columns: Vec<&'static str> = T::default()
+            .to_params()
+            .expect("to_params should succeed on Default entity")
+            .0;
+
+        #[derive(sqlx::FromRow, Debug)]
+        struct LiveColumn {
+            column_name: String,
+            is_nullable: String,
+            column_default: Option<String>,
+        }
+        let live: Vec<LiveColumn> = sqlx::query_as(
+            "SELECT column_name, is_nullable, column_default \
+             FROM information_schema.columns \
+             WHERE table_schema = 'public' AND table_name = $1",
+        )
+        .bind(table)
+        .fetch_all(pool)
+        .await
+        .unwrap_or_else(|e| panic!("Failed to fetch columns for {}: {}", table, e));
+
+        if live.is_empty() {
+            failures.push(format!(
+                "{}: table not found in live schema (but a Storable impl exists for it)",
+                table
+            ));
+            return;
+        }
+
+        let live_names: std::collections::HashSet<&str> =
+            live.iter().map(|c| c.column_name.as_str()).collect();
+
+        for col in &insert_columns {
+            if !live_names.contains(col) {
+                failures.push(format!(
+                    "{}: column {:?} in to_params() is missing from live schema",
+                    table, col
+                ));
+            }
+        }
+
+        for col in &live {
+            if col.is_nullable == "NO"
+                && col.column_default.is_none()
+                && !insert_columns.contains(&col.column_name.as_str())
+            {
+                failures.push(format!(
+                    "{}: live schema has NOT NULL column {:?} with no default, \
+                     but it's absent from to_params() — INSERTs will fail",
+                    table, col.column_name
+                ));
+            }
+        }
+    }
+
+    let mut failures: Vec<String> = Vec::new();
+
+    // Exhaustive list of Storable entities — should stay in sync with
+    // get_entity_deserializers above. Adding an entity: add an entry here and
+    // there together.
+    check_entity::<DaemonApiKey>(&pool, &mut failures).await;
+    check_entity::<Daemon>(&pool, &mut failures).await;
+    check_entity::<Discovery>(&pool, &mut failures).await;
+    check_entity::<Dependency>(&pool, &mut failures).await;
+    check_entity::<Host>(&pool, &mut failures).await;
+    check_entity::<Network>(&pool, &mut failures).await;
+    check_entity::<Organization>(&pool, &mut failures).await;
+    check_entity::<Service>(&pool, &mut failures).await;
+    check_entity::<Subnet>(&pool, &mut failures).await;
+    check_entity::<IPAddress>(&pool, &mut failures).await;
+    check_entity::<Invite>(&pool, &mut failures).await;
+    check_entity::<Share>(&pool, &mut failures).await;
+    check_entity::<User>(&pool, &mut failures).await;
+    check_entity::<UserApiKey>(&pool, &mut failures).await;
+    check_entity::<Tag>(&pool, &mut failures).await;
+    check_entity::<Topology>(&pool, &mut failures).await;
+    check_entity::<Port>(&pool, &mut failures).await;
+    check_entity::<Binding>(&pool, &mut failures).await;
+    check_entity::<Credential>(&pool, &mut failures).await;
+    check_entity::<Interface>(&pool, &mut failures).await;
+    check_entity::<Vlan>(&pool, &mut failures).await;
+    check_entity::<EntityTag>(&pool, &mut failures).await;
+    check_entity::<DependencyMemberRecord>(&pool, &mut failures).await;
+    check_entity::<SubnetVlanRecord>(&pool, &mut failures).await;
+
+    if !failures.is_empty() {
+        panic!(
+            "Entity column / live-schema drift detected:\n  - {}",
+            failures.join("\n  - ")
+        );
+    }
+}
+
+// ============================================================================
+// DB-backed enum backward-compat tests
+// ============================================================================
+
+#[allow(dead_code)]
+const DB_ENUM_BASELINE_PATH: &str = "tests/fixtures/db_enum_baseline.json";
+
+#[allow(dead_code)]
+fn load_db_enum_baseline() -> std::collections::BTreeMap<String, Vec<String>> {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(DB_ENUM_BASELINE_PATH);
+    let body = std::fs::read_to_string(&path).unwrap_or_else(|e| {
+        panic!("could not read baseline fixture at {:?}: {}", path, e);
+    });
+    serde_json::from_str(&body).unwrap_or_else(|e| {
+        panic!("baseline fixture at {:?} is not valid JSON: {}", path, e);
+    })
+}
+
+/// Forward-compat: every variant the previous release could emit must still
+/// deserialize into the current binary's type (directly or via a
+/// `#[serde(alias)]`). Catches rename-without-alias and variant-removal.
+///
+/// With a variant-names baseline, "still deserializes" is checked as "name is
+/// still a known variant" via `strum::VariantNames` on the current enum. If an
+/// alias covers the rename, the baseline can be extended manually to include
+/// the old name and regeneration will preserve it (regen warns on any name in
+/// the current fixture that isn't a current-binary variant).
+#[test]
+fn test_current_reads_previous_release_variants() {
+    use crate::server::shared::storage::traits::SqlValue;
+
+    let baseline = load_db_enum_baseline();
+    if baseline.is_empty() {
+        // Fresh checkout with bootstrap fixture: nothing to compare yet. First
+        // regeneration fills in the baseline; from that point on this test has
+        // something to assert against.
+        return;
+    }
+
+    let current = SqlValue::collect_all_db_enum_variants();
+
+    let mut missing: Vec<String> = Vec::new();
+    for (enum_name, baseline_variants) in &baseline {
+        let current_variants: Option<&Vec<String>> = current.get(enum_name.as_str());
+        let current_set: std::collections::HashSet<&str> = current_variants
+            .into_iter()
+            .flat_map(|v| v.iter().map(|s| s.as_str()))
+            .collect();
+        for variant in baseline_variants {
+            if !current_set.contains(variant.as_str()) {
+                missing.push(format!("{}::{}", enum_name, variant));
+            }
+        }
+    }
+
+    if !missing.is_empty() {
+        panic!(
+            "DB-backed enum forward-compat broken. The current binary has lost \
+             variants that the previous release could emit. Rows written by the \
+             previous binary will fail to deserialize in the new binary.\n\n\
+             Missing variants:\n  - {}\n\n\
+             Fix: either (a) restore the variant, (b) add `#[serde(alias = \"{}\")]` \
+             mapping the old name to a current variant and add the alias to \
+             `db_enum_baseline.json` manually, or (c) if this is an intentional \
+             breaking rename coordinated with a data migration, regenerate the \
+             baseline (cargo test --lib regenerate_db_enum_baseline -- --ignored) \
+             and declare `Deploy-Mode: downtime` for the release.",
+            missing.join("\n  - "),
+            missing
+                .first()
+                .and_then(|s| s.rsplit(':').next())
+                .unwrap_or("")
+        );
+    }
+}
+
+/// Backward-compat (deploy-window coexistence): the current binary must not be
+/// able to emit any variant the previous release's binary can't read. If it
+/// does, the old binary panics the moment the new binary writes that variant
+/// to the DB.
+#[test]
+fn test_current_writes_subset_of_previous_release() {
+    use crate::server::shared::storage::traits::SqlValue;
+
+    let baseline = load_db_enum_baseline();
+    if baseline.is_empty() {
+        return; // Fresh bootstrap — see test_current_reads note above.
+    }
+
+    let current = SqlValue::collect_all_db_enum_variants();
+
+    let mut added: Vec<String> = Vec::new();
+    for (enum_name, current_variants) in &current {
+        let baseline_variants: Option<&Vec<String>> = baseline.get(*enum_name);
+        let baseline_set: std::collections::HashSet<&str> = baseline_variants
+            .into_iter()
+            .flat_map(|v| v.iter().map(|s| s.as_str()))
+            .collect();
+        for variant in current_variants {
+            if !baseline_set.contains(variant.as_str()) {
+                added.push(format!("{}::{}", enum_name, variant));
+            }
+        }
+    }
+
+    if !added.is_empty() {
+        panic!(
+            "DB-backed enum backward-compat broken. The current binary can emit \
+             variants the previous release's binary can't read. If anything \
+             writes these to the DB during the deploy coexistence window, the \
+             old binary panics reading them.\n\n\
+             Added variants:\n  - {}\n\n\
+             Fix: either (a) ensure no code path writes this variant until a \
+             subsequent release, (b) ship an intermediate release that teaches \
+             old binaries to tolerate the new variant (via `#[serde(alias)]` or \
+             a fallback) and regenerate the baseline, or (c) declare \
+             `Deploy-Mode: downtime` in the release notes — the CI harness \
+             skips this test and the image is labeled for stop-migrate-start \
+             deploy semantics.",
+            added.join("\n  - ")
+        );
+    }
+}
+
+/// Regenerate `db_enum_baseline.json` from the current binary's DB-backed
+/// enums. Run this after cutting a release so the next cycle's coexistence
+/// checks compare against the released binary. Opt-in:
+///
+///   cargo test --lib regenerate_db_enum_baseline -- --ignored
+#[test]
+#[ignore]
+fn regenerate_db_enum_baseline() {
+    use crate::server::shared::storage::traits::SqlValue;
+
+    let current = SqlValue::collect_all_db_enum_variants();
+    // Convert to BTreeMap<String, Vec<String>> for deterministic JSON output.
+    let normalized: std::collections::BTreeMap<String, Vec<String>> = current
+        .into_iter()
+        .map(|(k, v)| (k.to_string(), v))
+        .collect();
+
+    let body =
+        serde_json::to_string_pretty(&normalized).expect("baseline map must serialize to JSON");
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(DB_ENUM_BASELINE_PATH);
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).expect("create fixture dir");
+    }
+    std::fs::write(&path, format!("{}\n", body)).expect("write baseline fixture");
+    println!("Regenerated DB-enum baseline at {:?}", path);
+    println!("{} enums catalogued:", normalized.len());
+    for (enum_name, variants) in &normalized {
+        println!("  {}: {} variants", enum_name, variants.len());
+    }
+}

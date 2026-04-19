@@ -10,7 +10,7 @@ use anyhow::Error;
 use secrecy::ExposeSecret;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumDiscriminants, EnumIter};
-use strum_macros::IntoStaticStr;
+use strum_macros::{IntoStaticStr, VariantNames};
 use utoipa::ToSchema;
 
 pub mod docker_proxy;
@@ -36,7 +36,9 @@ fn default_docker_port() -> u16 {
 
 /// Universal credential type — tagged enum stored as JSONB.
 /// Each variant represents a different credential protocol/method.
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, EnumDiscriminants, IntoStaticStr)]
+#[derive(
+    Debug, Clone, Serialize, Deserialize, ToSchema, EnumDiscriminants, IntoStaticStr, VariantNames,
+)]
 #[strum_discriminants(derive(Display, Hash, Serialize, Deserialize, IntoStaticStr, EnumIter))]
 #[serde(tag = "type")]
 pub enum CredentialType {

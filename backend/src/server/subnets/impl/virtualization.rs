@@ -1,11 +1,12 @@
 use serde::{Deserialize, Serialize};
+use strum_macros::VariantNames;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
 /// Virtualization metadata for subnets that belong to a virtual infrastructure.
 /// Consistent with HostVirtualization and ServiceVirtualization patterns.
 /// Points to the service that provides the virtualization (e.g., Docker daemon).
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, VariantNames, ToSchema)]
 #[serde(tag = "type")]
 pub enum SubnetVirtualization {
     /// Docker bridge network — host-scoped, same CIDR on different hosts are distinct subnets.

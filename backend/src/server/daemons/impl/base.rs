@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use clap::ValueEnum;
 use semver::Version;
 use serde::{Deserialize, Serialize};
-use strum::Display;
+use strum::{Display, VariantNames};
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
@@ -135,6 +135,7 @@ impl Display for Daemon {
     Eq,
     ValueEnum,
     Hash,
+    VariantNames,
     ToSchema,
 )]
 #[serde(rename_all = "snake_case")]

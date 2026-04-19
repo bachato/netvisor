@@ -185,7 +185,8 @@ pub trait Entity: Storable {
 }
 
 /// Helper type for SQL values
-#[derive(Clone)]
+#[derive(Clone, strum_macros::EnumDiscriminants)]
+#[strum_discriminants(derive(strum_macros::EnumIter))]
 pub enum SqlValue {
     Uuid(Uuid),
     OptionalUuid(Option<Uuid>),
@@ -247,4 +248,278 @@ pub enum SqlValue {
     PlanLimitNotifications(PlanLimitNotifications),
     OptionalIpAddrArray(Option<Vec<IpAddr>>),
     OptionalUuidVec(Option<Vec<Uuid>>),
+}
+
+// ============================================================================
+// DB-backed enum catalog for backward-compat tests
+// ============================================================================
+//
+// `SqlValue` is the complete typed catalog of everything the storage layer
+// writes to the DB. By walking every `SqlValue` variant and contributing the
+// variant names of each DB-backed Rust enum it transitively reaches, we build
+// a baseline that lets us detect:
+//
+//   - removed/renamed variants that break an upgraded binary reading old rows
+//     (forward-compat — Test A in tests.rs)
+//   - added variants that break an old binary reading new rows during deploy
+//     coexistence (backward-compat — Test B in tests.rs)
+//
+// Two compile-time gates ensure the catalog can't silently drift:
+//   1. The `match` in `SqlValue::contribute_db_enum_variants` is exhaustive —
+//      adding a new `SqlValue` variant fails the build.
+//   2. Each non-primitive arm dispatches via the `DbEnumContributor` trait —
+//      wrapping a type that doesn't implement the trait fails the build.
+
+/// A type whose DB-persisted variant names (if any) should flow into the
+/// backward-compat baseline fixture. Empty impls are legal — not every type
+/// wrapped by `SqlValue` has DB-backed enums.
+pub trait DbEnumContributor {
+    fn contribute(out: &mut std::collections::BTreeMap<&'static str, Vec<String>>);
+}
+
+/// Bare type name from `std::any::type_name`, stripping the module path.
+/// Used as the fixture key so renames refactor automatically.
+pub fn db_enum_key_for<T: ?Sized>() -> &'static str {
+    std::any::type_name::<T>()
+        .rsplit("::")
+        .next()
+        .unwrap_or("?")
+}
+
+/// Empty impls for types that wrap no DB-backed enums (primitives, foreign
+/// types, composite structs whose enum fields are covered elsewhere).
+macro_rules! impl_db_enum_contributor_empty {
+    ($($t:ty),* $(,)?) => {
+        $(
+            impl DbEnumContributor for $t {
+                fn contribute(_: &mut std::collections::BTreeMap<&'static str, Vec<String>>) {}
+            }
+        )*
+    };
+}
+
+/// Populating impls for DB-backed enums. Uses `strum::VariantNames` to obtain
+/// the list of variant identifiers at compile time — no instance construction
+/// needed, so enums with non-`Default` payload fields work here too.
+///
+/// Gotcha: `strum::VariantNames` returns Rust identifiers. If a variant carries
+/// `#[serde(rename = "...")]`, the DB-persisted tag differs from the Rust name;
+/// the baseline will need manual extension to include the renamed form.
+macro_rules! impl_db_enum_contributor_via_variant_names {
+    ($($t:ty),* $(,)?) => {
+        $(
+            impl DbEnumContributor for $t {
+                fn contribute(out: &mut std::collections::BTreeMap<&'static str, Vec<String>>) {
+                    let variants: Vec<String> = <$t as ::strum::VariantNames>::VARIANTS
+                        .iter()
+                        .map(|s| s.to_string())
+                        .collect();
+                    out.insert(db_enum_key_for::<$t>(), variants);
+                }
+            }
+        )*
+    };
+}
+
+// Primitives and foreign types wrapped in SqlValue — no DB-backed enums.
+impl_db_enum_contributor_empty!(
+    Uuid,
+    String,
+    i32,
+    i64,
+    u16,
+    u8,
+    bool,
+    EmailAddress,
+    DateTime<Utc>,
+    IpCidr,
+    IpAddr,
+    MacAddress,
+);
+
+// Generic wrapper pass-through — inner type's contribution flows up.
+impl<T: DbEnumContributor> DbEnumContributor for Option<T> {
+    fn contribute(out: &mut std::collections::BTreeMap<&'static str, Vec<String>>) {
+        T::contribute(out);
+    }
+}
+impl<T: DbEnumContributor> DbEnumContributor for Vec<T> {
+    fn contribute(out: &mut std::collections::BTreeMap<&'static str, Vec<String>>) {
+        T::contribute(out);
+    }
+}
+
+// Trait object: no enumerable variants. Dynamic dispatch through
+// ServiceDefinition covers service metadata (Docker, nginx, etc.), not
+// DB-persisted discriminants — out of scope for this catalog.
+impl DbEnumContributor for Box<dyn ServiceDefinition> {
+    fn contribute(_: &mut std::collections::BTreeMap<&'static str, Vec<String>>) {}
+}
+
+// Composite structs wrapped in SqlValue. Their enum fields (if any) are
+// already reachable directly through other SqlValue variants, so these
+// contribute nothing themselves. If a composite gains a nested enum that's
+// NOT reachable elsewhere, replace the empty impl with one that delegates
+// to the nested enum's `contribute`.
+impl_db_enum_contributor_empty!(
+    DaemonCapabilities,
+    UserOrgPermissions,
+    TopologyOptions,
+    crate::server::shares::r#impl::base::ShareOptions,
+    PlanLimitNotifications,
+    OnboardingOperation,
+    Port,
+    IPAddress,
+    Host,
+    Subnet,
+    Service,
+    Binding,
+    Dependency,
+    Interface,
+    Tag,
+    crate::server::vlans::r#impl::base::Vlan,
+    Node,
+    Edge,
+);
+
+// DB-backed enums. Each gets a variant-names contribution. Requires
+// `#[derive(strum::VariantNames)]` on the enum definition.
+//
+// Note: `SubscriptionStatus` is a foreign type from the `stripe_billing`
+// crate — we can't add derives to it. Treated as empty below (Stripe SDK
+// version bumps are explicit and coordinated with server deploys, so the
+// coexistence-window risk is negligible in practice).
+impl_db_enum_contributor_via_variant_names!(
+    EntitySource,
+    HostVirtualization,
+    ServiceVirtualization,
+    crate::server::subnets::r#impl::virtualization::SubnetVirtualization,
+    RunType,
+    DiscoveryType,
+    BillingPlan,
+    EdgeStyle,
+    DaemonMode,
+    CredentialType,
+    crate::server::snmp::resolution::lldp::LldpChassisId,
+    crate::server::snmp::resolution::lldp::LldpPortId,
+    crate::server::topology::types::views::TopologyView,
+);
+
+// SubscriptionStatus: foreign type from stripe_billing. Empty impl.
+impl DbEnumContributor for SubscriptionStatus {
+    fn contribute(_: &mut std::collections::BTreeMap<&'static str, Vec<String>>) {}
+}
+
+// EntityDiscriminants: auto-generated from Entity via EnumDiscriminants. The
+// derive list includes VariantNames (see backend/src/server/shared/entities.rs).
+impl DbEnumContributor for EntityDiscriminants {
+    fn contribute(out: &mut std::collections::BTreeMap<&'static str, Vec<String>>) {
+        let variants: Vec<String> = <Self as ::strum::VariantNames>::VARIANTS
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        out.insert(db_enum_key_for::<Self>(), variants);
+    }
+}
+
+impl SqlValue {
+    /// For each `SqlValue` variant, contribute the DB-backed enum variant
+    /// names reachable through its wrapped type. Exhaustive match on
+    /// `SqlValueDiscriminants` forces every variant to be covered.
+    fn dispatch_kind(
+        kind: SqlValueDiscriminants,
+        out: &mut std::collections::BTreeMap<&'static str, Vec<String>>,
+    ) {
+        use crate::server::shares::r#impl::base::ShareOptions;
+        use crate::server::snmp::resolution::lldp::{LldpChassisId, LldpPortId};
+        use crate::server::subnets::r#impl::virtualization::SubnetVirtualization;
+        use crate::server::topology::types::views::TopologyView;
+        use crate::server::vlans::r#impl::base::Vlan;
+
+        match kind {
+            SqlValueDiscriminants::Uuid
+            | SqlValueDiscriminants::OptionalUuid
+            | SqlValueDiscriminants::UuidArray
+            | SqlValueDiscriminants::OptionVecUuid
+            | SqlValueDiscriminants::OptionalUuidVec => Uuid::contribute(out),
+            SqlValueDiscriminants::String
+            | SqlValueDiscriminants::OptionalString
+            | SqlValueDiscriminants::StringArray
+            | SqlValueDiscriminants::OptionalStringArray
+            | SqlValueDiscriminants::OptionalFdbMacs => String::contribute(out),
+            SqlValueDiscriminants::I32 => i32::contribute(out),
+            SqlValueDiscriminants::OptionalI64 => i64::contribute(out),
+            SqlValueDiscriminants::U16 | SqlValueDiscriminants::OptionVecU16 => {
+                u16::contribute(out)
+            }
+            SqlValueDiscriminants::Bool => bool::contribute(out),
+            SqlValueDiscriminants::Email => EmailAddress::contribute(out),
+            SqlValueDiscriminants::Timestamp | SqlValueDiscriminants::OptionTimestamp => {
+                <DateTime<Utc>>::contribute(out)
+            }
+            SqlValueDiscriminants::IpCidr => IpCidr::contribute(out),
+            SqlValueDiscriminants::IpAddr
+            | SqlValueDiscriminants::OptionalIpAddr
+            | SqlValueDiscriminants::OptionalIpAddrArray => IpAddr::contribute(out),
+            SqlValueDiscriminants::MacAddress | SqlValueDiscriminants::OptionalMacAddress => {
+                MacAddress::contribute(out)
+            }
+            SqlValueDiscriminants::EntitySource => EntitySource::contribute(out),
+            SqlValueDiscriminants::EntityDiscriminant => EntityDiscriminants::contribute(out),
+            SqlValueDiscriminants::ServiceDefinition => {
+                <Box<dyn ServiceDefinition>>::contribute(out)
+            }
+            SqlValueDiscriminants::OptionalServiceVirtualization => {
+                ServiceVirtualization::contribute(out)
+            }
+            SqlValueDiscriminants::OptionalHostVirtualization => {
+                HostVirtualization::contribute(out)
+            }
+            SqlValueDiscriminants::OptionalSubnetVirtualization => {
+                SubnetVirtualization::contribute(out)
+            }
+            SqlValueDiscriminants::Ports => Port::contribute(out),
+            SqlValueDiscriminants::IPAddresses => IPAddress::contribute(out),
+            SqlValueDiscriminants::RunType => RunType::contribute(out),
+            SqlValueDiscriminants::DiscoveryType => DiscoveryType::contribute(out),
+            SqlValueDiscriminants::DaemonCapabilities => DaemonCapabilities::contribute(out),
+            SqlValueDiscriminants::UserOrgPermissions => UserOrgPermissions::contribute(out),
+            SqlValueDiscriminants::OptionBillingPlan => BillingPlan::contribute(out),
+            SqlValueDiscriminants::OptionBillingPlanStatus => SubscriptionStatus::contribute(out),
+            SqlValueDiscriminants::EdgeStyle => EdgeStyle::contribute(out),
+            SqlValueDiscriminants::DaemonMode => DaemonMode::contribute(out),
+            SqlValueDiscriminants::Nodes => Node::contribute(out),
+            SqlValueDiscriminants::Edges => Edge::contribute(out),
+            SqlValueDiscriminants::TopologyOptions => TopologyOptions::contribute(out),
+            SqlValueDiscriminants::Hosts => Host::contribute(out),
+            SqlValueDiscriminants::Subnets => Subnet::contribute(out),
+            SqlValueDiscriminants::Services => Service::contribute(out),
+            SqlValueDiscriminants::Bindings => Binding::contribute(out),
+            SqlValueDiscriminants::Dependencies => Dependency::contribute(out),
+            SqlValueDiscriminants::OnboardingOperation => OnboardingOperation::contribute(out),
+            SqlValueDiscriminants::OptionalLldpChassisId => LldpChassisId::contribute(out),
+            SqlValueDiscriminants::OptionalLldpPortId => LldpPortId::contribute(out),
+            SqlValueDiscriminants::ShareOptions => ShareOptions::contribute(out),
+            SqlValueDiscriminants::EnabledViews => TopologyView::contribute(out),
+            SqlValueDiscriminants::CredentialType => CredentialType::contribute(out),
+            SqlValueDiscriminants::Interfaces => Interface::contribute(out),
+            SqlValueDiscriminants::Tags => Tag::contribute(out),
+            SqlValueDiscriminants::Vlans => Vlan::contribute(out),
+            SqlValueDiscriminants::PlanLimitNotifications => {
+                PlanLimitNotifications::contribute(out)
+            }
+        }
+    }
+
+    /// Produces the DB-backed enum baseline for the current binary: every
+    /// DB-backed Rust enum reachable through any `SqlValue` variant, with its
+    /// known variant names.
+    pub fn collect_all_db_enum_variants() -> std::collections::BTreeMap<&'static str, Vec<String>> {
+        use strum::IntoEnumIterator;
+        let mut out = std::collections::BTreeMap::new();
+        for kind in SqlValueDiscriminants::iter() {
+            Self::dispatch_kind(kind, &mut out);
+        }
+        out
+    }
 }

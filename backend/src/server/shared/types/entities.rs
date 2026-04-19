@@ -5,12 +5,22 @@ use crate::server::services::r#impl::patterns::MatchDetails;
 use chrono::DateTime;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use strum_macros::EnumDiscriminants;
+use strum_macros::{EnumDiscriminants, VariantNames};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
 #[derive(
-    Debug, Clone, Serialize, Deserialize, Default, Eq, PartialEq, Hash, EnumDiscriminants, ToSchema,
+    Debug,
+    Clone,
+    Serialize,
+    Deserialize,
+    Default,
+    Eq,
+    PartialEq,
+    Hash,
+    EnumDiscriminants,
+    VariantNames,
+    ToSchema,
 )]
 #[strum_discriminants(derive(Hash))]
 #[serde(tag = "type")]

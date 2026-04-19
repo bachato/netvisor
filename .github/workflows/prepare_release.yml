@@ -7,6 +7,14 @@ on:
         description: 'Version number (e.g., 0.11.3)'
         required: true
         type: string
+      deploy_mode:
+        description: 'Deploy compatibility mode (controls backward-compat checks + image label)'
+        required: false
+        default: 'backward-compatible'
+        type: choice
+        options:
+          - backward-compatible
+          - downtime
 
 permissions: {}
 
@@ -68,11 +76,22 @@ jobs:
           git push origin dev
         fi
     - name: Create release
+      env:
+        GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        DEPLOY_MODE: ${{ inputs.deploy_mode }}
       run: |
-        gh release create "v${{ inputs.version }}" \
-          --title "v${{ inputs.version }}" \
+        TAG="v${{ inputs.version }}"
+        gh release create "$TAG" \
+          --title "$TAG" \
           --generate-notes \
           --prerelease \
           --target dev
-      env:
-        GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+
+        # Prepend a machine-readable Deploy-Mode marker that release.yml parses
+        # to decide whether to run the backward-compat harness / enum tests and
+        # what OCI label to stamp on the built images.
+        GENERATED_BODY=$(gh release view "$TAG" --json body -q '.body')
+        NEW_BODY="Deploy-Mode: ${DEPLOY_MODE}
+
+${GENERATED_BODY}"
+        gh release edit "$TAG" --notes "$NEW_BODY"

@@ -94,10 +94,33 @@ jobs:
     needs: test-and-update-fixtures
     permissions:
       contents: read
+    outputs:
+      deploy_mode: ${{ steps.deploy_mode.outputs.mode }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.release.target_commitish }}
+
+      - name: Parse deploy mode from release body
+        id: deploy_mode
+        env:
+          RELEASE_BODY: ${{ github.event.release.body }}
+        run: |
+          if echo "$RELEASE_BODY" | grep -iq '^Deploy-Mode:[[:space:]]*downtime'; then
+            MODE=downtime
+          else
+            MODE=backward-compatible
+          fi
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Deploy mode"
+            echo ""
+            echo "Resolved to: \`$MODE\`"
+            if [ "$MODE" = "downtime" ]; then
+              echo ""
+              echo "Release body declared \`Deploy-Mode: downtime\` — the backward-compat container harness and DB-enum coexistence tests will be skipped. Built images will be labeled \`org.scanopy.deploy_mode=downtime\` for the deployer."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Compute branch expiration (24h safety net)
         run: echo "EXPIRES_AT=$(date -u -d '+1 day' +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
@@ -143,6 +166,54 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
         env:
           DATABASE_URL: ${{ steps.create_branch.outputs.db_url }}
+
+      - name: Log in to GHCR for compat-check image pull
+        if: steps.deploy_mode.outputs.mode != 'downtime'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Backward-compat container harness (prev release vs migrated schema)
+        if: steps.deploy_mode.outputs.mode != 'downtime'
+        id: compat_check
+        env:
+          DATABASE_URL: ${{ steps.create_branch.outputs.db_url }}
+        run: |
+          set +e
+          bash backend/scripts/compat-check.sh "$DATABASE_URL" "ghcr.io/${{ github.repository }}/server:latest" | tee /tmp/compat-check.log
+          RC=${PIPESTATUS[0]}
+          set -e
+          {
+            echo "## Backward-compat container harness"
+            echo ""
+            STATUS_LINE=$(grep '^COMPAT_STATUS=' /tmp/compat-check.log | tail -1 || true)
+            if [ -n "$STATUS_LINE" ]; then
+              echo "$STATUS_LINE"
+            else
+              echo "No COMPAT_STATUS emitted; see raw log below."
+            fi
+            echo ""
+            echo '<details><summary>Raw log</summary>'
+            echo ''
+            echo '```'
+            cat /tmp/compat-check.log
+            echo '```'
+            echo '</details>'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$RC"
+
+      - name: DB-enum coexistence tests
+        if: steps.deploy_mode.outputs.mode != 'downtime'
+        env:
+          DATABASE_URL: ${{ steps.create_branch.outputs.db_url }}
+        working-directory: backend
+        run: |
+          cargo test --lib \
+            test_current_reads_previous_release_variants \
+            test_current_writes_subset_of_previous_release \
+            -- --ignored
 
       - name: Delete Neon branch
         if: always()
@@ -298,6 +369,8 @@ jobs:
             PUBLIC_SERVER_PORT=60072
           tags: |
             ghcr.io/${{ github.repository }}/server:${{ github.event.release.tag_name }}-${{ matrix.suffix }}
+          labels: |
+            org.scanopy.deploy_mode=${{ needs.migration-branch-test.outputs.deploy_mode }}
           cache-from: type=gha,scope=server-${{ matrix.suffix }}
           cache-to: type=gha,mode=max,scope=server-${{ matrix.suffix }}
 
@@ -355,6 +428,8 @@ jobs:
             CARGO_FEATURES=commercial
           tags: |
             ghcr.io/${{ github.repository }}/server-commercial:${{ github.event.release.tag_name }}-${{ matrix.suffix }}
+          labels: |
+            org.scanopy.deploy_mode=${{ needs.migration-branch-test.outputs.deploy_mode }}
           cache-from: type=gha,scope=server-commercial-${{ matrix.suffix }}
           cache-to: type=gha,mode=max,scope=server-commercial-${{ matrix.suffix }}
 
@@ -408,6 +483,8 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ github.repository }}/daemon:${{ github.event.release.tag_name }}
+          labels: |
+            org.scanopy.deploy_mode=${{ needs.migration-branch-test.outputs.deploy_mode }}
 
   # ============================================
   # Create multi-arch manifests for server images
@@ -450,7 +527,7 @@ jobs:
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
-      
+
       - name: Upload binaries to release
         uses: softprops/action-gh-release@v1
         with:
@@ -458,3 +535,73 @@ jobs:
             scanopy-daemon-*/scanopy-daemon-*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  regenerate-db-enum-baseline:
+    name: Regenerate DB-enum baseline for next release cycle
+    runs-on: ubuntu-latest
+    needs: [create-manifests]
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@1.90.0
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev pkg-config
+
+      - name: Regenerate baseline
+        working-directory: backend
+        run: cargo test --lib regenerate_db_enum_baseline -- --ignored --nocapture
+
+      - name: Check for fixture changes
+        id: diff
+        working-directory: backend
+        run: |
+          if git diff --quiet tests/fixtures/db_enum_baseline.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open PR with refreshed baseline
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        working-directory: backend
+        run: |
+          BRANCH="chore/regen-db-enum-baseline-${{ github.event.release.tag_name }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add tests/fixtures/db_enum_baseline.json
+          git commit -m "chore: regenerate db_enum_baseline for ${{ github.event.release.tag_name }}"
+          git push -u origin "$BRANCH"
+          gh pr create \
+            --title "chore: regenerate db_enum_baseline for ${{ github.event.release.tag_name }}" \
+            --body "Automated baseline refresh after ${{ github.event.release.tag_name }} was published. Merges the new set of DB-backed enum variants into the baseline so the next release cycle's coexistence checks compare against the just-released binary.$'\n\n'Review: confirm the diff matches the enum changes in this release. If a rename shipped with a \`#[serde(alias)]\`, keep the old name in the fixture manually." \
+            --base dev \
+            --head "$BRANCH"
+
+      - name: Summary
+        run: |
+          {
+            echo "## DB-enum baseline"
+            echo ""
+            if [ "${{ steps.diff.outputs.changed }}" = "true" ]; then
+              echo "Baseline changed — PR opened against \`dev\`."
+            else
+              echo "No baseline changes (no DB-backed enum variants added/removed in this release)."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -6,6 +6,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::net::IpAddr;
+use strum_macros::VariantNames;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -13,7 +14,7 @@ use uuid::Uuid;
 ///
 /// The chassis ID identifies the remote device. Different network equipment
 /// may use different subtypes depending on configuration and capabilities.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, VariantNames, ToSchema)]
 #[serde(tag = "subtype", content = "value")]
 pub enum LldpChassisId {
     /// Subtype 1: Chassis component (e.g., backplane serial number)
@@ -36,7 +37,7 @@ pub enum LldpChassisId {
 /// LLDP Port ID subtypes per IEEE 802.1AB.
 ///
 /// The port ID identifies the specific port on the remote device.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, VariantNames, ToSchema)]
 #[serde(tag = "subtype", content = "value")]
 pub enum LldpPortId {
     /// Subtype 1: Interface alias (ifAlias from IF-MIB)
