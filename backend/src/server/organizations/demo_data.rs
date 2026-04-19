@@ -4635,7 +4635,7 @@ fn generate_shares(
                     is_enabled: true,
                     expires_at: None,
                     password_hash: None,
-                    has_password: false,
+                    password: None,
                     allowed_domains: None,
                     options: ShareOptions {
                         show_inspect_panel: false,
@@ -4662,7 +4662,7 @@ fn generate_shares(
                     is_enabled: true,
                     expires_at: None,
                     password_hash: None,
-                    has_password: false,
+                    password: None,
                     allowed_domains: None,
                     options: ShareOptions {
                         show_inspect_panel: true,

@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use crate::server::credentials::r#impl::types::REDACTED_SECRET_SENTINEL;
 use crate::server::shared::{
     entities::{ChangeTriggersTopologyStaleness, EntityDiscriminants},
     entity_metadata::EntityCategory,
@@ -7,12 +8,25 @@ use crate::server::shared::{
 };
 use crate::server::topology::types::views::TopologyView;
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use secrecy::SecretString;
+use serde::{Deserialize, Serialize, Serializer};
 use sqlx::Row;
 use sqlx::postgres::PgRow;
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
+
+/// Serializer for `Option<SecretString>` that emits the redaction sentinel when set,
+/// `null` when unset — never exposing plaintext.
+fn redact_optional_password<S: Serializer>(
+    value: &Option<SecretString>,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    match value {
+        None => serializer.serialize_none(),
+        Some(_) => serializer.serialize_some(REDACTED_SECRET_SENTINEL),
+    }
+}
 
 /// CSV row representation for Share export (excludes password_hash)
 #[derive(Serialize)]
@@ -54,9 +68,7 @@ impl Default for ShareOptions {
     }
 }
 
-#[derive(
-    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Default, ToSchema, Validate,
-)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, ToSchema, Validate)]
 pub struct ShareBase {
     pub topology_id: Uuid,
     pub network_id: Uuid,
@@ -65,15 +77,16 @@ pub struct ShareBase {
     pub is_enabled: bool,
     #[schema(required)]
     pub expires_at: Option<DateTime<Utc>>,
-    /// Password hash - never sent to client, never accept from client
+    /// Password hash — never sent to client, never accepted from client.
     #[serde(skip)]
     pub password_hash: Option<String>,
-    /// Whether a password is set — computed from `password_hash` server-side,
-    /// never stored in DB. Clients may send any value; handlers overwrite it
-    /// from `password_hash` before persisting and before responding.
-    #[serde(default)]
-    #[schema(read_only)]
-    pub has_password: bool,
+    /// Plaintext password on ingest; redacted sentinel (`"********"`) or `None` on egress.
+    /// Never stored — `password_hash` is the DB column. Wrapped in `SecretString` so
+    /// `Debug`/logging shows `[REDACTED]` during the window between request
+    /// deserialization and hashing.
+    #[serde(default, serialize_with = "redact_optional_password")]
+    #[schema(value_type = Option<String>)]
+    pub password: Option<SecretString>,
     #[schema(required)]
     pub allowed_domains: Option<Vec<String>>,
     pub options: ShareOptions,
@@ -85,9 +98,7 @@ pub struct ShareBase {
     pub enabled_views: Option<Vec<TopologyView>>,
 }
 
-#[derive(
-    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Default, ToSchema, Validate,
-)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, ToSchema, Validate)]
 pub struct Share {
     #[serde(default)]
     #[schema(read_only, required)]
@@ -134,6 +145,72 @@ impl Share {
             .allowed_domains
             .as_ref()
             .is_some_and(|d| !d.is_empty())
+    }
+}
+
+impl ShareBase {
+    /// Normalize `password` so the response carries only `Some(sentinel)` (when a
+    /// password is set) or `None` — never the plaintext the client sent. Call this
+    /// in every handler that mutates `password_hash` before serializing a response.
+    pub fn redact_password(&mut self) {
+        self.password = if self.password_hash.is_some() {
+            Some(SecretString::new(
+                REDACTED_SECRET_SENTINEL.to_string().into(),
+            ))
+        } else {
+            None
+        };
+    }
+}
+
+// Hand-rolled equality/hash because `SecretString` doesn't implement them. Compare
+// the stored hash (not the transient `password` field) — two shares with identical
+// stored state are equal regardless of what the request-side plaintext buffer holds.
+impl PartialEq for ShareBase {
+    fn eq(&self, other: &Self) -> bool {
+        self.topology_id == other.topology_id
+            && self.network_id == other.network_id
+            && self.created_by == other.created_by
+            && self.name == other.name
+            && self.is_enabled == other.is_enabled
+            && self.expires_at == other.expires_at
+            && self.password_hash == other.password_hash
+            && self.allowed_domains == other.allowed_domains
+            && self.options == other.options
+            && self.enabled_views == other.enabled_views
+    }
+}
+impl Eq for ShareBase {}
+impl std::hash::Hash for ShareBase {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.topology_id.hash(state);
+        self.network_id.hash(state);
+        self.created_by.hash(state);
+        self.name.hash(state);
+        self.is_enabled.hash(state);
+        self.expires_at.hash(state);
+        self.password_hash.hash(state);
+        self.allowed_domains.hash(state);
+        self.options.hash(state);
+        self.enabled_views.hash(state);
+    }
+}
+
+impl PartialEq for Share {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+            && self.created_at == other.created_at
+            && self.updated_at == other.updated_at
+            && self.base == other.base
+    }
+}
+impl Eq for Share {}
+impl std::hash::Hash for Share {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+        self.created_at.hash(state);
+        self.updated_at.hash(state);
+        self.base.hash(state);
     }
 }
 
@@ -210,7 +287,9 @@ impl Storable for Share {
             .and_then(|v| serde_json::from_value(v).ok());
 
         let password_hash: Option<String> = row.get("password_hash");
-        let has_password = password_hash.is_some();
+        let password = password_hash
+            .as_ref()
+            .map(|_| SecretString::new(REDACTED_SECRET_SENTINEL.to_string().into()));
 
         Ok(Share {
             id: row.get("id"),
@@ -224,7 +303,7 @@ impl Storable for Share {
                 is_enabled: row.get("is_enabled"),
                 expires_at: row.get("expires_at"),
                 password_hash,
-                has_password,
+                password,
                 allowed_domains: row.get("allowed_domains"),
                 options,
                 enabled_views,
