@@ -71,7 +71,10 @@
 		networkLimit !== null && networksData.length >= networkLimit && !canBuyMore
 	);
 	let isNearNetworkLimit = $derived(
-		networkLimit !== null && networksData.length >= networkLimit - 2 && !isAtNetworkLimit
+		networkLimit !== null &&
+			networksData.length >= networkLimit - 2 &&
+			!isAtNetworkLimit &&
+			!canBuyMore
 	);
 
 	let showCreateNetworkModal = $state(false);
