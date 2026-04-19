@@ -18,6 +18,7 @@
 	import { useTagsQuery } from '$lib/features/tags/queries';
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import UpgradeButton from '$lib/shared/components/UpgradeButton.svelte';
+	import { triggerUpgrade } from '$lib/features/billing/trigger-upgrade';
 	import type { TabProps } from '$lib/shared/types';
 	import {
 		common_confirmDeleteName,
@@ -79,6 +80,9 @@
 	const organizationQuery = useOrganizationQuery();
 	let org = $derived(organizationQuery.data);
 	let hostLimit = $derived(org?.plan?.included_hosts ?? null);
+	let canBuyMoreHosts = $derived(
+		org?.plan?.host_cents !== undefined && org?.plan?.host_cents !== null
+	);
 	let onboarding = $derived((org?.onboarding ?? []) as OnboardingOperation[]);
 
 	const tagsQuery = useTagsQuery();
@@ -127,9 +131,14 @@
 
 	// Host limit tracking
 	let totalHostCount = $derived(hostsPagination?.total_count ?? hostsData.length);
-	let isAtHostLimit = $derived(hostLimit !== null && totalHostCount >= hostLimit);
+	let isAtHostLimit = $derived(
+		hostLimit !== null && totalHostCount >= hostLimit && !canBuyMoreHosts
+	);
 	let isNearHostLimit = $derived(
-		hostLimit !== null && totalHostCount >= hostLimit - 5 && totalHostCount < hostLimit
+		hostLimit !== null &&
+			totalHostCount >= hostLimit - 5 &&
+			totalHostCount < hostLimit &&
+			!canBuyMoreHosts
 	);
 
 	// Page change handler for server-side pagination
@@ -264,6 +273,10 @@
 	);
 
 	function handleCreateHost() {
+		if (isAtHostLimit) {
+			triggerUpgrade({ feature: 'hosts', source: 'hosts_create_button' });
+			return;
+		}
 		editingHost = null;
 		showHostEditor = true;
 	}
@@ -350,7 +363,7 @@
 		<svelte:fragment slot="actions">
 			{#if hasDaemon(onboarding)}
 				<div class="flex items-center gap-3">
-					{#if hostLimit !== null}
+					{#if hostLimit !== null && !canBuyMoreHosts}
 						<span
 							class="text-sm {isAtHostLimit
 								? 'text-amber-400'
@@ -362,16 +375,12 @@
 						</span>
 					{/if}
 					{#if !isReadOnly}
-						{#if isAtHostLimit}
+						{#if isAtHostLimit || isNearHostLimit}
 							<UpgradeButton feature="hosts" />
-						{:else}
-							{#if isNearHostLimit}
-								<UpgradeButton feature="hosts" />
-							{/if}
-							<button class="btn-primary flex items-center" onclick={handleCreateHost}
-								><Plus class="h-5 w-5" />{common_create()}</button
-							>
 						{/if}
+						<button class="btn-primary flex items-center" onclick={handleCreateHost}
+							><Plus class="h-5 w-5" />{common_create()}</button
+						>
 					{/if}
 				</div>
 			{/if}

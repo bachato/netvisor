@@ -13,6 +13,7 @@
 	import { useOrganizationQuery } from '$lib/features/organizations/queries';
 	import { permissions } from '$lib/shared/stores/metadata';
 	import UpgradeButton from '$lib/shared/components/UpgradeButton.svelte';
+	import { triggerUpgrade } from '$lib/features/billing/trigger-upgrade';
 	import type { TabProps } from '$lib/shared/types';
 	import {
 		common_create,
@@ -111,6 +112,10 @@
 	}
 
 	function handleCreateNetwork() {
+		if (isAtNetworkLimit) {
+			triggerUpgrade({ feature: 'networks', source: 'networks_create_button' });
+			return;
+		}
 		editingNetwork = null;
 		showCreateNetworkModal = true;
 	}
@@ -196,7 +201,7 @@
 	<TabHeader title={common_networks()}>
 		<svelte:fragment slot="actions">
 			<div class="flex items-center gap-3">
-				{#if networkLimit !== null}
+				{#if networkLimit !== null && !canBuyMore}
 					<span
 						class="text-sm {isAtNetworkLimit
 							? 'text-amber-400'
@@ -208,16 +213,12 @@
 					</span>
 				{/if}
 				{#if canManageNetworks}
-					{#if isAtNetworkLimit}
+					{#if !canBuyMore && (isAtNetworkLimit || isNearNetworkLimit)}
 						<UpgradeButton feature="networks" />
-					{:else}
-						{#if isNearNetworkLimit}
-							<UpgradeButton feature="networks" />
-						{/if}
-						<button class="btn-primary flex items-center" onclick={handleCreateNetwork}
-							><Plus class="h-5 w-5" />{common_create()}</button
-						>
 					{/if}
+					<button class="btn-primary flex items-center" onclick={handleCreateNetwork}
+						><Plus class="h-5 w-5" />{common_create()}</button
+					>
 				{/if}
 			</div>
 		</svelte:fragment>
