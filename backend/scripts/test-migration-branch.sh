@@ -99,7 +99,8 @@ fi
 
 echo
 echo "=== Snapshotting schema before migrations ==="
-pg_dump --schema-only --no-owner --no-privileges "$DATABASE_URL" > "$BEFORE_DUMP"
+pg_dump --schema-only --no-owner --no-privileges "$DATABASE_URL" \
+    | grep -Ev '^\\(un)?restrict' > "$BEFORE_DUMP"
 echo "  ($(wc -l <"$BEFORE_DUMP" | tr -d ' ') lines)"
 
 case "$STAGE" in
@@ -145,7 +146,8 @@ fi
 
 echo
 echo "=== Snapshotting schema after migrations ==="
-pg_dump --schema-only --no-owner --no-privileges "$DATABASE_URL" > "$AFTER_DUMP"
+pg_dump --schema-only --no-owner --no-privileges "$DATABASE_URL" \
+    | grep -Ev '^\\(un)?restrict' > "$AFTER_DUMP"
 echo "  ($(wc -l <"$AFTER_DUMP" | tr -d ' ') lines)"
 
 echo

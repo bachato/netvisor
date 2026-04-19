@@ -117,7 +117,9 @@ jobs:
           tool: sqlx-cli
 
       - name: Snapshot schema before migrations
-        run: pg_dump --schema-only --no-owner --no-privileges "$DATABASE_URL" > /tmp/before.sql
+        run: |
+          pg_dump --schema-only --no-owner --no-privileges "$DATABASE_URL" \
+            | grep -Ev '^\\(un)?restrict' > /tmp/before.sql
         env:
           DATABASE_URL: ${{ steps.create_branch.outputs.db_url }}
 
@@ -129,7 +131,8 @@ jobs:
 
       - name: Snapshot schema after migrations and write diff to job summary
         run: |
-          pg_dump --schema-only --no-owner --no-privileges "$DATABASE_URL" > /tmp/after.sql
+          pg_dump --schema-only --no-owner --no-privileges "$DATABASE_URL" \
+            | grep -Ev '^\\(un)?restrict' > /tmp/after.sql
           {
             echo "## Migration schema delta — ${{ github.event.release.tag_name }}"
             echo ""
