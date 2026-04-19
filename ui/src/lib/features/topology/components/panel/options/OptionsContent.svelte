@@ -76,8 +76,7 @@
 		views.getMetadata($activeView) as {
 			element_config?: {
 				container_entity: string | null;
-				element_entities: string[];
-				inline_entities: string[];
+				element_entities: Array<{ entity_type: string; inline_entities: string[] }>;
 			};
 		} | null
 	);
@@ -85,15 +84,16 @@
 	let filterableEntities = $derived.by(() => {
 		const config = elementConfig;
 		if (!config) return new SvelteSet<string>();
-		const set = new SvelteSet(
-			[config.container_entity, ...config.element_entities, ...config.inline_entities].filter(
-				Boolean
-			)
-		);
+		const set = new SvelteSet<string>();
+		if (config.container_entity) set.add(config.container_entity);
+		for (const ee of config.element_entities ?? []) {
+			set.add(ee.entity_type);
+			for (const inline of ee.inline_entities) set.add(inline);
+		}
 		// Expand element's parent taggable entity when the view has containers and the parent isn't already the container
 		if (config.container_entity) {
-			for (const elementEntity of config.element_entities) {
-				const parentEntity = entities.getMetadata(elementEntity)?.parent_taggable_entity;
+			for (const ee of config.element_entities ?? []) {
+				const parentEntity = entities.getMetadata(ee.entity_type)?.parent_taggable_entity;
 				if (parentEntity && parentEntity !== config.container_entity) {
 					set.add(parentEntity);
 				}

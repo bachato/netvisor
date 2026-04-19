@@ -119,6 +119,22 @@
 	// All services for this host (tag-hidden services stay in list to preserve card height)
 	let visibleServicesForHost = $derived(servicesForHost);
 
+	// Inline entity types declared for THIS element entity in the active view.
+	// Drives what renders inside the card (services list, port rows) — replaces
+	// the old per-element hardcoded gates.
+	let inlineForThisElement = $derived(
+		(
+			views.getMetadata($activeView) as {
+				element_config?: {
+					element_entities?: Array<{ entity_type: string; inline_entities: string[] }>;
+				};
+			} | null
+		)?.element_config?.element_entities?.find((e) => e.entity_type === resolved?.elementType)
+			?.inline_entities ?? []
+	);
+	let inlinesService = $derived(inlineForThisElement.includes('Service'));
+	let inlinesPort = $derived(inlineForThisElement.includes('Port'));
+
 	// Reactively subscribe to the container subnet store
 	let isContainerSubnetValue = $derived(
 		ipAddress
@@ -193,7 +209,9 @@
 					return hiddenCategories.includes(category as CategoryType) || hiddenServices.has(s.id);
 				});
 
-				const showServices = servicesOnHost.length !== 0 || hiddenOpenPorts.length !== 0;
+				// Only inline services when the view's Host element entity declares Service inlined.
+				const showServices =
+					inlinesService && (servicesOnHost.length !== 0 || hiddenOpenPorts.length !== 0);
 
 				const hostLabel = (data as TopologyNode).header ?? (host.name || host.hostname || null);
 
@@ -289,7 +307,9 @@
 			let footerText: string | null = null;
 			let subtitleText: string | null = null;
 			let headerText: string | null = (data as TopologyNode).header ?? null;
-			let showServices = servicesOnIPAddress.length != 0 || hiddenOpenPorts.length != 0;
+			// Only inline services when the view's IPAddress element entity declares Service inlined.
+			let showServices =
+				inlinesService && (servicesOnIPAddress.length != 0 || hiddenOpenPorts.length != 0);
 
 			if (ipAddress && !isContainerSubnetValue) {
 				subtitleText = (ipAddress.name ? ipAddress.name + ': ' : '') + ipAddress.ip_address;
@@ -574,7 +594,7 @@
 								{service.name}
 							</span>
 						</div>
-						{#if !$topologyOptions.request.hide_ports && nodeRenderData.elementType !== 'Service' && service.bindings.filter((b) => b.type == 'Port').length > 0}
+						{#if !$topologyOptions.request.hide_ports && inlinesPort && service.bindings.filter((b) => b.type == 'Port').length > 0}
 							<span class="text-tertiary mt-1 text-center text-xs"
 								>{service.bindings
 									.map((b) => {
@@ -651,7 +671,7 @@
 											{service.name}
 										</span>
 									</div>
-									{#if !$topologyOptions.request.hide_ports && nodeRenderData.elementType !== 'Service' && service.bindings.filter((b) => b.type == 'Port').length > 0}
+									{#if !$topologyOptions.request.hide_ports && inlinesPort && service.bindings.filter((b) => b.type == 'Port').length > 0}
 										<span class="text-tertiary mt-1 text-center text-xs"
 											>{service.bindings
 												.map((b) => {

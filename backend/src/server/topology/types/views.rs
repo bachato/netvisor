@@ -94,16 +94,28 @@ impl TopologyView {
 pub struct ViewElementConfig {
     /// Entity rendered as the container/grouping box (e.g. Subnet in L3, Host in L2/Workloads)
     pub container_entity: Option<EntityDiscriminants>,
-    /// Entities rendered as element nodes (e.g. Service + Host in Workloads)
-    pub element_entities: Vec<EntityDiscriminants>,
-    /// Entities shown inside element nodes (e.g. Services displayed as cards)
-    pub inline_entities: Vec<EntityDiscriminants>,
+    /// Per-element-entity config: the entity types rendered as element nodes and
+    /// (for each) which other entity types are shown *inside* those cards.
+    /// Replaces the old flat `inline_entities` so views like Workloads — where
+    /// Host elements inline services but Service elements inline nothing — can
+    /// be expressed correctly.
+    pub element_entities: Vec<ViewElementEntityConfig>,
     /// Single noun spanning all element entities. Used in summaries when the
     /// per-entity breakdown would be confusing (e.g. mixed Host+Service in
     /// Workloads, where everything is conceptually a "workload"). Singular;
     /// the UI pluralizes as needed.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub collective_noun: Option<String>,
+}
+
+/// An element-entity slot inside a view, plus the set of entity types that
+/// render inline on that element's card. Card rendering (what services/ports
+/// show up inside an element) and layout re-trigger fingerprinting both read
+/// from this list.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+pub struct ViewElementEntityConfig {
+    pub entity_type: EntityDiscriminants,
+    pub inline_entities: Vec<EntityDiscriminants>,
 }
 
 // ---------------------------------------------------------------------------
@@ -240,26 +252,40 @@ impl TopologyView {
         match self {
             Self::L3Logical => ViewElementConfig {
                 container_entity: Some(EntityDiscriminants::Subnet),
-                element_entities: vec![EntityDiscriminants::IPAddress],
-                inline_entities: vec![EntityDiscriminants::Service],
+                element_entities: vec![ViewElementEntityConfig {
+                    entity_type: EntityDiscriminants::IPAddress,
+                    inline_entities: vec![EntityDiscriminants::Service, EntityDiscriminants::Port],
+                }],
                 collective_noun: None,
             },
             Self::L2Physical => ViewElementConfig {
                 container_entity: Some(EntityDiscriminants::Host),
-                element_entities: vec![EntityDiscriminants::Interface],
-                inline_entities: vec![],
+                element_entities: vec![ViewElementEntityConfig {
+                    entity_type: EntityDiscriminants::Interface,
+                    inline_entities: vec![],
+                }],
                 collective_noun: None,
             },
             Self::Workloads => ViewElementConfig {
                 container_entity: Some(EntityDiscriminants::Host),
-                element_entities: vec![EntityDiscriminants::Service, EntityDiscriminants::Host],
-                inline_entities: vec![],
+                element_entities: vec![
+                    ViewElementEntityConfig {
+                        entity_type: EntityDiscriminants::Service,
+                        inline_entities: vec![],
+                    },
+                    ViewElementEntityConfig {
+                        entity_type: EntityDiscriminants::Host,
+                        inline_entities: vec![EntityDiscriminants::Service],
+                    },
+                ],
                 collective_noun: Some("workload".to_string()),
             },
             Self::Application => ViewElementConfig {
                 container_entity: None,
-                element_entities: vec![EntityDiscriminants::Service],
-                inline_entities: vec![],
+                element_entities: vec![ViewElementEntityConfig {
+                    entity_type: EntityDiscriminants::Service,
+                    inline_entities: vec![],
+                }],
                 collective_noun: None,
             },
         }

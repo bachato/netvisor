@@ -42,9 +42,11 @@
       "element_config": {
         "container_entity": "Host",
         "element_entities": [
-          "Interface"
-        ],
-        "inline_entities": []
+          {
+            "entity_type": "Interface",
+            "inline_entities": []
+          }
+        ]
       },
       "inspector_config": {
         "container_sections": [
@@ -127,10 +129,13 @@
       "element_config": {
         "container_entity": "Subnet",
         "element_entities": [
-          "IPAddress"
-        ],
-        "inline_entities": [
-          "Service"
+          {
+            "entity_type": "IPAddress",
+            "inline_entities": [
+              "Service",
+              "Port"
+            ]
+          }
         ]
       },
       "inspector_config": {
@@ -200,10 +205,17 @@
         "collective_noun": "workload",
         "container_entity": "Host",
         "element_entities": [
-          "Service",
-          "Host"
-        ],
-        "inline_entities": []
+          {
+            "entity_type": "Service",
+            "inline_entities": []
+          },
+          {
+            "entity_type": "Host",
+            "inline_entities": [
+              "Service"
+            ]
+          }
+        ]
       },
       "inspector_config": {
         "container_sections": [
@@ -271,9 +283,11 @@
       "element_config": {
         "container_entity": null,
         "element_entities": [
-          "Service"
-        ],
-        "inline_entities": []
+          {
+            "entity_type": "Service",
+            "inline_entities": []
+          }
+        ]
       },
       "inspector_config": {
         "container_sections": [

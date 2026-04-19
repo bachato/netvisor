@@ -193,13 +193,13 @@ export function updateTagFilter(
 
 	// Determine filter roles from element config and parent_taggable_entity relationships
 	const hostIsContainer = config.container_entity === 'Host';
-	const hostIsElement = config.element_entities.includes('Host');
+	const hostIsElement = config.element_entities.some((e) => e.entity_type === 'Host');
 	const hostIsParent = config.element_entities.some(
-		(e) => entities.getMetadata(e)?.parent_taggable_entity === 'Host'
+		(e) => entities.getMetadata(e.entity_type)?.parent_taggable_entity === 'Host'
 	);
 	const hostIsRelevant = hostIsContainer || hostIsElement || hostIsParent;
-	const serviceIsElement = config.element_entities.includes('Service');
-	const serviceIsInline = config.inline_entities.includes('Service');
+	const serviceIsElement = config.element_entities.some((e) => e.entity_type === 'Service');
+	const serviceIsInline = viewInlinesEntity(config, 'Service');
 	const serviceIsVisible = serviceIsElement || serviceIsInline;
 
 	const hiddenHostTagIds = tagFilter?.hidden_host_tag_ids ?? [];
@@ -700,27 +700,36 @@ export function getEdgeDisplayState(
 	return { shouldShowFull, shouldAnimate, isEndpointSearchHidden, isEndpointTagHidden };
 }
 
-interface ViewElementConfig {
-	container_entity: string | null;
-	element_entities: string[];
+export interface ViewElementEntityConfig {
+	entity_type: string;
 	inline_entities: string[];
 }
 
+export interface ViewElementConfig {
+	container_entity: string | null;
+	element_entities: ViewElementEntityConfig[];
+}
+
 /** Read ViewElementConfig from views metadata store, with safe defaults */
-function getViewElementConfig(view?: string): ViewElementConfig {
-	if (!view) return { container_entity: null, element_entities: [], inline_entities: [] };
+export function getViewElementConfig(view?: string): ViewElementConfig {
+	if (!view) return { container_entity: null, element_entities: [] };
 	const meta = views.getMetadata(view) as {
-		element_config?: {
-			container_entity: string | null;
-			element_entities: string[];
-			inline_entities: string[];
-		};
+		element_config?: ViewElementConfig;
 	} | null;
 	return {
 		container_entity: meta?.element_config?.container_entity ?? null,
-		element_entities: meta?.element_config?.element_entities ?? [],
-		inline_entities: meta?.element_config?.inline_entities ?? []
+		element_entities: meta?.element_config?.element_entities ?? []
 	};
+}
+
+/** True if any element entity in the view inlines the given entity type. */
+export function viewInlinesEntity(config: ViewElementConfig, entityType: string): boolean {
+	return config.element_entities.some((e) => e.inline_entities.includes(entityType));
+}
+
+/** Entity-type names of the view's element entities (no inline detail). */
+export function elementEntityTypes(config: ViewElementConfig): string[] {
+	return config.element_entities.map((e) => e.entity_type);
 }
 
 interface EntityResolution {
@@ -751,8 +760,10 @@ function resolveEntityToNodes(
 	const elementNodeIds: string[] = [];
 	const containerNodeIds: string[] = [];
 
+	const isDirectElement = config.element_entities.some((e) => e.entity_type === entityType);
+
 	// 1. Direct element: entity type is an element in this view
-	if (config.element_entities.includes(entityType)) {
+	if (isDirectElement) {
 		const getIndex = ENTITY_ELEMENT_INDEX[entityType];
 		if (getIndex) {
 			const nodeIds = getIndex(index).get(entityId);
@@ -773,21 +784,19 @@ function resolveEntityToNodes(
 
 	// 3. Parent propagation: entity type is parent_taggable_entity of an element entity
 	const isParent = config.element_entities.some(
-		(e) => entities.getMetadata(e)?.parent_taggable_entity === entityType
+		(e) => entities.getMetadata(e.entity_type)?.parent_taggable_entity === entityType
 	);
-	if (
-		isParent &&
-		entityType !== config.container_entity &&
-		!config.element_entities.includes(entityType)
-	) {
+	if (isParent && entityType !== config.container_entity && !isDirectElement) {
 		// hostIdToNodes maps host_id to all element nodes with that host_id,
 		// regardless of element type — works across views
 		const nodeIds = index.hostIdToNodes.get(entityId);
 		if (nodeIds) elementNodeIds.push(...nodeIds);
 	}
 
-	// 4. Inline entity: resolve through bindings to element nodes
-	if (config.inline_entities.includes(entityType) && entityType === 'Service') {
+	// 4. Inline entity: resolve through bindings to element nodes.
+	// Only Service is wired through here today; Port inline filtering would
+	// need a similar branch if product adds port tag filtering later.
+	if (viewInlinesEntity(config, entityType) && entityType === 'Service') {
 		const service = topology.services.find((s) => s.id === entityId);
 		if (service) {
 			for (const binding of service.bindings) {

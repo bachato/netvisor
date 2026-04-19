@@ -12,9 +12,66 @@ import {
 	computeCollapsedEdges
 } from '../collapse';
 import { elevateEdgesToContainers } from '../layout/edge-elevation';
-import { containerTypes } from '$lib/shared/stores/metadata';
+import { containerTypes, views } from '$lib/shared/stores/metadata';
 import { activeView, topologyOptions } from '../queries';
 import { buildTopologyParentIndex } from '../topology-parent-index';
+
+/**
+ * Collections on Topology that can surface as inline entity content on element
+ * cards. Keyed by EntityDiscriminants name — matches what views declare in
+ * element_config.element_entities[].inline_entities.
+ *
+ * Entity-registry data, not view-specific: the only knowledge encoded here is
+ * "Service entities live in topology.services". Adding a new inlinable entity
+ * type is a one-line append.
+ */
+const INLINE_ENTITY_COLLECTIONS: Record<string, keyof Topology> = {
+	Service: 'services',
+	Port: 'ports',
+	Interface: 'interfaces',
+	IPAddress: 'ip_addresses',
+	Host: 'hosts',
+	Subnet: 'subnets',
+	Binding: 'bindings',
+	Dependency: 'dependencies',
+	Vlan: 'vlans'
+};
+
+/**
+ * Build a stable signature of everything the active view inlines on its
+ * element cards. Returns '' when no view-declared inline entity types are in
+ * play, so L2 / Workloads/Service / Application pay nothing here.
+ *
+ * Any field change on any inlined entity bumps the signature — that's the
+ * design trade-off: view-agnostic, fully deterministic, bounded over-trigger
+ * (a service name change that doesn't affect card height still re-layouts).
+ */
+function getInlineContentKey(topo: Topology, view: string): string {
+	const meta = views.getMetadata(view) as {
+		element_config?: {
+			element_entities?: Array<{ entity_type: string; inline_entities: string[] }>;
+		};
+	} | null;
+	const entries = meta?.element_config?.element_entities ?? [];
+	const inlineTypes = new Set<string>();
+	for (const ee of entries) {
+		for (const t of ee.inline_entities) inlineTypes.add(t);
+	}
+	if (inlineTypes.size === 0) return '';
+
+	const sigs: string[] = [];
+	for (const type of inlineTypes) {
+		const collectionKey = INLINE_ENTITY_COLLECTIONS[type];
+		if (!collectionKey) continue;
+		const collection = topo[collectionKey] as unknown;
+		if (!Array.isArray(collection)) continue;
+		for (const entity of collection) {
+			sigs.push(JSON.stringify(entity));
+		}
+	}
+	sigs.sort();
+	return sigs.join(';');
+}
 
 // Tab-scoped guard: only apply the "fresh session" default-level seeding on the
 // very first pipeline run of this tab. Subsequent runs (topology switches,
@@ -22,7 +79,7 @@ import { buildTopologyParentIndex } from '../topology-parent-index';
 // stepExpand to 4) is respected on later navigations.
 let defaultsAppliedThisSession = false;
 
-function getStructureKey(topo: Topology): string {
+function getStructureKey(topo: Topology, view: string): string {
 	const nodeKeys = topo.nodes
 		.map((n) => {
 			const parentId = n.node_type === 'Element' ? n.container_id : n.parent_container_id;
@@ -30,7 +87,8 @@ function getStructureKey(topo: Topology): string {
 		})
 		.sort()
 		.join(',');
-	return `${topo.nodes.length}:${topo.edges.length}:${nodeKeys}`;
+	const inlineKey = getInlineContentKey(topo, view);
+	return `${topo.nodes.length}:${topo.edges.length}:${nodeKeys}|${inlineKey}`;
 }
 
 /**
@@ -45,7 +103,7 @@ export function prepareTopologyData(
 	getInfrastructureRuleId: () => string | null
 ): PrepareResult | null {
 	const currentView = get(activeView);
-	const topoKey = getStructureKey(topology);
+	const topoKey = getStructureKey(topology, currentView);
 	const viewChanged = state.lastRenderedView !== '' && currentView !== state.lastRenderedView;
 	const topologyChanged = topoKey !== state.lastRenderedTopoKey;
 

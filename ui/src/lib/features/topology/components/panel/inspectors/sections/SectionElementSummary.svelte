@@ -23,8 +23,10 @@
 			views.getMetadata($activeView) as
 				| {
 						element_config?: {
-							element_entities?: Entity[];
-							inline_entities?: Entity[];
+							element_entities?: Array<{
+								entity_type: Entity;
+								inline_entities: Entity[];
+							}>;
 							collective_noun?: string;
 						};
 				  }
@@ -32,17 +34,23 @@
 		)?.element_config ?? {}
 	);
 
-	// Union preserves order: element_entities first, then any inline-only ones.
+	// Union of all element entity types and their declared inline entity types,
+	// preserving order: element entity types first, then any inline-only ones.
 	let summaryEntities = $derived.by((): Entity[] => {
 		const seen = new SvelteSet<Entity>();
 		const result: Entity[] = [];
-		for (const e of [
-			...(elementConfig.element_entities ?? []),
-			...(elementConfig.inline_entities ?? [])
-		]) {
-			if (!seen.has(e)) {
-				seen.add(e);
-				result.push(e);
+		for (const ee of elementConfig.element_entities ?? []) {
+			if (!seen.has(ee.entity_type)) {
+				seen.add(ee.entity_type);
+				result.push(ee.entity_type);
+			}
+		}
+		for (const ee of elementConfig.element_entities ?? []) {
+			for (const inline of ee.inline_entities) {
+				if (!seen.has(inline)) {
+					seen.add(inline);
+					result.push(inline);
+				}
 			}
 		}
 		return result;
