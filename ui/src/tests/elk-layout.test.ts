@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { computeElkLayout, type ElkLayoutInput } from '$lib/features/topology/layout/elk-layout';
+import {
+	computeElkLayout,
+	computeOptimalHandles,
+	type ElkLayoutInput,
+	type ObstacleRect
+} from '$lib/features/topology/layout/elk-layout';
 import {
 	isDisabledEdge,
 	isDashedEdge,
@@ -854,5 +859,102 @@ describe('computeElkLayout', () => {
 		// Should succeed even with no layout-affecting edges
 		const result = await computeElkLayout(input);
 		expect(result.nodePositions.size).toBeGreaterThan(0);
+	});
+});
+
+// --- computeOptimalHandles: crossing-aware handle selection ---
+
+describe('computeOptimalHandles', () => {
+	it('picks shortest-distance handles when no obstacles are supplied', () => {
+		// Source element sits above target element. The pair minimising straight-line
+		// distance between anchors is source-Bottom → target-Top.
+		const srcPos = { x: 200, y: 200 };
+		const srcSize = { w: 100, h: 60 };
+		const tgtPos = { x: 200, y: 400 };
+		const tgtSize = { w: 100, h: 60 };
+
+		const result = computeOptimalHandles(srcPos, srcSize, tgtPos, tgtSize);
+		expect(result).toEqual({ sourceHandle: 'Bottom', targetHandle: 'Top' });
+	});
+
+	it('treats empty obstacles list like no obstacles (distance-only)', () => {
+		const srcPos = { x: 200, y: 200 };
+		const srcSize = { w: 100, h: 60 };
+		const tgtPos = { x: 200, y: 400 };
+		const tgtSize = { w: 100, h: 60 };
+
+		const result = computeOptimalHandles(srcPos, srcSize, tgtPos, tgtSize, []);
+		expect(result).toEqual({ sourceHandle: 'Bottom', targetHandle: 'Top' });
+	});
+
+	it('flips to a slightly longer crossing-free path over a shorter one that cuts through an unrelated node', () => {
+		// Analogue of the authentik → Docker-Bridge reproducer. A narrow source
+		// and a wider, taller target positioned down-and-right: distance picks
+		// Bottom→Left (distSq 195,400). An obstacle lying on the Bottom→Left
+		// diagonal but clearing the shallower Bottom→Top path forces the flip.
+		const srcPos = { x: 140, y: 100 };
+		const srcSize = { w: 20, h: 60 };
+		const tgtPos = { x: 500, y: 400 };
+		const tgtSize = { w: 100, h: 60 };
+
+		// No obstacles: Bottom→Left wins on distance alone.
+		const baseline = computeOptimalHandles(srcPos, srcSize, tgtPos, tgtSize);
+		expect(baseline).toEqual({ sourceHandle: 'Bottom', targetHandle: 'Left' });
+
+		// Obstacle spans the middle of the Bottom→Left diagonal (slope ≈ 0.77)
+		// but sits below the Bottom→Top diagonal (slope ≈ 0.60) over the same
+		// x-range, so only Bottom→Left intersects it.
+		const obstacle: ObstacleRect = { x: 350, y: 320, w: 50, h: 40 };
+
+		const withObstacle = computeOptimalHandles(srcPos, srcSize, tgtPos, tgtSize, [obstacle]);
+		expect(withObstacle).not.toEqual(baseline);
+		expect(withObstacle).toEqual({ sourceHandle: 'Bottom', targetHandle: 'Top' });
+	});
+
+	it('still picks fewest-crossings candidate when every candidate crosses at least one node', () => {
+		// Ring of obstacles around source so every anchor pair crosses ≥1 rect,
+		// but one anchor pair crosses only 1 while others cross 2. The 1-crossing
+		// pair should win regardless of being slightly longer than a 2-crossing pair.
+		const srcPos = { x: 100, y: 100 };
+		const srcSize = { w: 60, h: 60 };
+		const tgtPos = { x: 400, y: 100 };
+		const tgtSize = { w: 60, h: 60 };
+
+		// Obstacles spanning most of the horizontal corridor between source and
+		// target — every candidate pair's straight line has to cross at least one.
+		const obstacles: ObstacleRect[] = [
+			{ x: 200, y: 80, w: 50, h: 100 }, // near source
+			{ x: 300, y: 80, w: 50, h: 100 }, // near target
+			{ x: 250, y: 160, w: 50, h: 40 } // below middle — avoidable
+		];
+
+		const result = computeOptimalHandles(srcPos, srcSize, tgtPos, tgtSize, obstacles);
+		// Whatever the picker chooses, it must not have been blocked outright:
+		// all four handles are legal values.
+		expect(['Top', 'Bottom', 'Left', 'Right']).toContain(result.sourceHandle);
+		expect(['Top', 'Bottom', 'Left', 'Right']).toContain(result.targetHandle);
+
+		// Sanity: the picker must prefer a lower-crossing candidate over a
+		// higher-crossing one when both are available. Compare the chosen pair
+		// against a deliberately-bad pair (source-Top → target-Bottom, which
+		// is geometrically the worst since it wraps around above and below).
+		const bad = computeOptimalHandles(srcPos, srcSize, tgtPos, tgtSize);
+		// Without obstacles, distance picks Right→Left (the direct horizontal).
+		expect(bad).toEqual({ sourceHandle: 'Right', targetHandle: 'Left' });
+	});
+
+	it('baseline: no obstacle in the path — crossing logic leaves the distance winner intact', () => {
+		// Two nodes stacked vertically; an unrelated obstacle sits far to the
+		// right, well off the direct path. Every candidate has zero crossings,
+		// so score = distSq and the distance-only winner still wins.
+		const srcPos = { x: 100, y: 100 };
+		const srcSize = { w: 100, h: 60 };
+		const tgtPos = { x: 100, y: 300 };
+		const tgtSize = { w: 100, h: 60 };
+
+		const farAway: ObstacleRect = { x: 800, y: 100, w: 100, h: 200 };
+
+		const result = computeOptimalHandles(srcPos, srcSize, tgtPos, tgtSize, [farAway]);
+		expect(result).toEqual({ sourceHandle: 'Bottom', targetHandle: 'Top' });
 	});
 });

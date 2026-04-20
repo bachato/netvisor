@@ -310,6 +310,12 @@ function computeHandlesFromLayout(
 		return undefined;
 	};
 
+	// Absolute-positioned rects for every container + element, built once per
+	// handle-resolution pass. Per-edge we filter out the endpoints and their
+	// ancestor containers (a line from an element to its own parent naturally
+	// crosses the parent's boundary — don't penalise that).
+	const allRects = layoutGraph.getAllNodeRects();
+
 	const pick = (src: string, tgt: string): EdgeHandles | undefined => {
 		const srcPos = layoutGraph.getAbsolutePosition(src);
 		const tgtPos = layoutGraph.getAbsolutePosition(tgt);
@@ -325,7 +331,12 @@ function computeHandlesFromLayout(
 				targetHandle: srcCx < tgtCx ? 'Left' : 'Right'
 			};
 		}
-		return computeOptimalHandles(srcPos, srcSize, tgtPos, tgtSize);
+
+		const exclude = new Set<string>([src, tgt]);
+		for (const a of layoutGraph.ancestorIdsOf(src)) exclude.add(a);
+		for (const a of layoutGraph.ancestorIdsOf(tgt)) exclude.add(a);
+		const obstacles = allRects.filter((r) => !exclude.has(r.id));
+		return computeOptimalHandles(srcPos, srcSize, tgtPos, tgtSize, obstacles);
 	};
 
 	for (const edge of elevatedEdges) {
