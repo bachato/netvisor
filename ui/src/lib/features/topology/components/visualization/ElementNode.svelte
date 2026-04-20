@@ -135,6 +135,15 @@
 	let inlinesService = $derived(inlineForThisElement.includes('Service'));
 	let inlinesPort = $derived(inlineForThisElement.includes('Port'));
 
+	// Entity types the user has hidden in this view via the filter panel's
+	// eye toggle. Gates inline rendering of Service rows and Port lines.
+	// (Element/container-level hiding is applied upstream via tagHiddenNodeIds.)
+	let hiddenEntitiesThisView = $derived(
+		(($topologyOptions.request.hide_entities ?? {}) as Record<string, string[]>)[$activeView] ?? []
+	);
+	let portInlineHidden = $derived(hiddenEntitiesThisView.includes('Port'));
+	let serviceInlineHidden = $derived(hiddenEntitiesThisView.includes('Service'));
+
 	// Reactively subscribe to the container subnet store
 	let isContainerSubnetValue = $derived(
 		ipAddress
@@ -209,9 +218,12 @@
 					return hiddenCategories.includes(category as CategoryType) || hiddenServices.has(s.id);
 				});
 
-				// Only inline services when the view's Host element entity declares Service inlined.
+				// Only inline services when the view's Host element entity declares Service
+				// inlined AND the user hasn't toggled Service off in the filter panel.
 				const showServices =
-					inlinesService && (servicesOnHost.length !== 0 || hiddenOpenPorts.length !== 0);
+					inlinesService &&
+					!serviceInlineHidden &&
+					(servicesOnHost.length !== 0 || hiddenOpenPorts.length !== 0);
 
 				const hostLabel = (data as TopologyNode).header ?? (host.name || host.hostname || null);
 
@@ -307,9 +319,12 @@
 			let footerText: string | null = null;
 			let subtitleText: string | null = null;
 			let headerText: string | null = (data as TopologyNode).header ?? null;
-			// Only inline services when the view's IPAddress element entity declares Service inlined.
+			// Only inline services when the view's IPAddress element entity declares Service
+			// inlined AND the user hasn't toggled Service off in the filter panel.
 			let showServices =
-				inlinesService && (servicesOnIPAddress.length != 0 || hiddenOpenPorts.length != 0);
+				inlinesService &&
+				!serviceInlineHidden &&
+				(servicesOnIPAddress.length != 0 || hiddenOpenPorts.length != 0);
 
 			if (ipAddress && !isContainerSubnetValue) {
 				subtitleText = (ipAddress.name ? ipAddress.name + ': ' : '') + ipAddress.ip_address;
@@ -446,19 +461,34 @@
 	const containerizationColorHelper = concepts.getColorHelper('Containerization');
 	const discoveryColorHelper = entities.getColorHelper('Discovery');
 
-	// Check if this host should be highlighted by tag hover.
-	// Skip when the hovered entity type matches the container entity (container handles it),
-	// UNLESS Host is also an element entity (e.g. Workloads VMs) — then highlight Host-type elements.
+	// Card outline from hover — two paths:
+	//   tag-scoped hover (tagId set): original animated-pulse via color on a
+	//     tag the node's host carries.
+	//   entity-type hover (tagId null): subdued gray outline on every matching
+	//     element card, for the new filter-panel section-header affordance.
 	let tagHoverRingStyle = $derived.by(() => {
-		if (!currentHoveredTag || currentHoveredTag.entityType !== 'host' || !host) return '';
+		if (!currentHoveredTag || !host) return '';
+		const elementType = nodeRenderData?.elementType;
+		// Entity-type-wide hover (no tag). Match on this element's own type.
+		if (currentHoveredTag.tagId === null) {
+			if (!elementType || currentHoveredTag.entityType !== elementType) return '';
+			return 'box-shadow: 0 0 0 2px rgb(156, 163, 175);';
+		}
+		// Tag-scoped hover, Host variant: retain original constraints.
+		if (currentHoveredTag.entityType !== 'Host') return '';
 		const viewMeta = views.getMetadata($activeView) as {
-			element_config?: { container_entity?: string; element_entities?: string[] };
+			element_config?: {
+				container_entity?: string;
+				element_entities?: Array<{ entity_type: string }>;
+			};
 		} | null;
 		const containerEntity = viewMeta?.element_config?.container_entity;
-		const elementEntities = viewMeta?.element_config?.element_entities ?? [];
-		if (containerEntity && currentHoveredTag.entityType === containerEntity.toLowerCase()) {
-			// If Host is also an element entity, only highlight Host-type elements (VMs)
-			if (!elementEntities.includes('Host') || nodeRenderData?.elementType !== 'Host') return '';
+		const hostIsAlsoElement =
+			viewMeta?.element_config?.element_entities?.some((e) => e.entity_type === 'Host') ?? false;
+		if (containerEntity === 'Host') {
+			// When Host is a container, only highlight Host-type elements (VMs) in views
+			// that have Host-as-element; let the container node handle its own highlight.
+			if (!hostIsAlsoElement || elementType !== 'Host') return '';
 		}
 		const { tagId, color } = currentHoveredTag;
 		const isUntagged = host.tags.length === 0;
@@ -472,7 +502,11 @@
 	let serviceHoverShadowStyle = $derived.by(() => {
 		if (!nodeRenderData?.showServices) return '';
 		const services = nodeRenderData.services;
-		if (currentHoveredTag && currentHoveredTag.entityType === 'service') {
+		if (
+			currentHoveredTag &&
+			currentHoveredTag.entityType === 'Service' &&
+			currentHoveredTag.tagId !== null
+		) {
 			const { tagId, color } = currentHoveredTag;
 			for (const service of services) {
 				const isUntagged = service.tags.length === 0;
@@ -497,6 +531,13 @@
 		return '';
 	});
 
+	// Whether the hovered entity type matches this element — drives the
+	// dotted-underline on the header text.
+	let isEntityTypeHover = $derived(
+		currentHoveredTag?.tagId === null &&
+			currentHoveredTag?.entityType === nodeRenderData?.elementType
+	);
+
 	let cardClass = $derived(`card ${isNodeSelected ? 'card-selected' : ''}`);
 
 	let handleStyle = $derived.by(() => {
@@ -518,7 +559,7 @@
 
 {#if nodeRenderData}
 	<div
-		class={`${cardClass} ${isNewNode ? 'animate-pulse-highlight' : ''} ${serviceHoverShadowStyle ? 'animate-pulse-highlight-once' : ''}`}
+		class={`${cardClass} ${isNewNode ? 'animate-pulse-highlight' : ''} ${serviceHoverShadowStyle ? 'animate-pulse-highlight-once' : ''} ${isEntityTypeHover ? 'entity-type-hover-active' : ''}`}
 		style={`width: ${effectiveWidth}px; height: 100%; display: flex; flex-direction: column; padding: 0; opacity: ${nodeOpacity}; transition: opacity 0.2s ease-in-out, box-shadow 0.15s ease-in-out; ${isNewNode ? `--pulse-color: ${discoveryColorHelper.rgb};` : ''} ${serviceHoverShadowStyle} ${tagHoverRingStyle}`}
 	>
 		<!-- Rest of component stays the same -->
@@ -526,6 +567,7 @@
 		{#if nodeRenderData.headerText}
 			<div class="relative flex-shrink-0 px-2 pt-2 text-center">
 				<div
+					data-entity-header
 					class={`truncate text-xs font-medium leading-none ${nodeRenderData.isVirtualized ? virtualizationColorHelper.text : nodeRenderData.isContainerized ? containerizationColorHelper.text : 'text-tertiary'}`}
 				>
 					{nodeRenderData.headerText}
@@ -535,6 +577,7 @@
 
 		{#if nodeRenderData.subtitleText}
 			<div
+				data-entity-header
 				class="text-primary truncate px-2 pt-2 text-center text-sm font-medium {!nodeRenderData.headerText &&
 				!nodeRenderData.showServices
 					? 'pb-2'
@@ -555,7 +598,12 @@
 						service.service_definition
 					)}
 					{@const serviceTagHighlight = (() => {
-						if (!currentHoveredTag || currentHoveredTag.entityType !== 'service') return '';
+						if (
+							!currentHoveredTag ||
+							currentHoveredTag.entityType !== 'Service' ||
+							currentHoveredTag.tagId === null
+						)
+							return '';
 						const { tagId, color } = currentHoveredTag;
 						const isUntagged = service.tags.length === 0;
 						const hasTag = tagId === UNTAGGED_SENTINEL ? isUntagged : service.tags.includes(tagId);
@@ -594,7 +642,7 @@
 								{service.name}
 							</span>
 						</div>
-						{#if !$topologyOptions.request.hide_ports && inlinesPort && service.bindings.filter((b) => b.type == 'Port').length > 0}
+						{#if inlinesPort && !portInlineHidden && service.bindings.filter((b) => b.type == 'Port').length > 0}
 							<span class="text-tertiary mt-1 text-center text-xs"
 								>{service.bindings
 									.map((b) => {
@@ -671,7 +719,7 @@
 											{service.name}
 										</span>
 									</div>
-									{#if !$topologyOptions.request.hide_ports && inlinesPort && service.bindings.filter((b) => b.type == 'Port').length > 0}
+									{#if inlinesPort && !portInlineHidden && service.bindings.filter((b) => b.type == 'Port').length > 0}
 										<span class="text-tertiary mt-1 text-center text-xs"
 											>{service.bindings
 												.map((b) => {

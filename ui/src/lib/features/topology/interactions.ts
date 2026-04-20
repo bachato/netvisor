@@ -49,11 +49,19 @@ export const searchNavigableNodeIds = writable<string[]>([]);
 // Special sentinel value for "Untagged" pseudo-tag
 export const UNTAGGED_SENTINEL = '__untagged__';
 
-// Tag hover state for highlighting nodes with a specific tag
+// Hover state for highlighting a set of nodes in the topology. Two modes:
+//   tagId string + color string  → tag-scoped hover (animated colored pulse on
+//                                   nodes whose tagged entity of `entityType`
+//                                   includes `tagId`).
+//   tagId null  + color null     → entity-type-wide hover (subdued gray outline
+//                                   + dotted-underline on every node whose
+//                                   type matches `entityType`).
+// Mutex by UX: at most one hover is active at a time, so a single store
+// handles both modes.
 export interface HoveredTag {
-	tagId: string;
-	color: string;
-	entityType: 'host' | 'service' | 'subnet';
+	entityType: import('$lib/api/schema').components['schemas']['EntityDiscriminants'];
+	tagId: string | null;
+	color: string | null;
 }
 export const hoveredTag = writable<HoveredTag | null>(null);
 
@@ -172,7 +180,8 @@ export function updateTagFilter(
 	topology: Topology | undefined,
 	tagFilter: TagFilter | undefined,
 	view?: string,
-	hiddenCategories?: string[]
+	hiddenCategories?: string[],
+	hiddenEntityTypes?: string[]
 ) {
 	if (!topology) {
 		tagHiddenNodeIds.set(new Set());
@@ -182,8 +191,9 @@ export function updateTagFilter(
 
 	const hasTagFilter = tagFilter && !isTagFilterEmpty(tagFilter);
 	const hasCategoryFilter = hiddenCategories && hiddenCategories.length > 0;
+	const hasEntityFilter = hiddenEntityTypes && hiddenEntityTypes.length > 0;
 
-	if (!hasTagFilter && !hasCategoryFilter) {
+	if (!hasTagFilter && !hasCategoryFilter && !hasEntityFilter) {
 		tagHiddenNodeIds.set(new Set());
 		tagHiddenServiceIds.set(new Set());
 		return;
@@ -270,6 +280,41 @@ export function updateTagFilter(
 			}
 		}
 		hideContainersAndDescendants(hiddenContainerIds, topology.nodes, hiddenNodeIds);
+	}
+
+	// Entity-type hide: extend the same hidden sets for every entity type
+	// listed in hide_entities for the active view. Same pattern as tag/category
+	// hiding, but scoped to "hide all instances of this type" — matches
+	// the per-view eye-toggle affordance in the filter panel.
+	if (hasEntityFilter) {
+		const entityTypes = new Set(hiddenEntityTypes);
+		if (entityTypes.has('Host')) {
+			for (const host of topology.hosts) {
+				const nodeIds = index.hostIdToNodes.get(host.id);
+				nodeIds?.forEach((id) => hiddenNodeIds.add(id));
+			}
+		}
+		if (entityTypes.has('Service')) {
+			for (const service of topology.services) {
+				hiddenServiceIds.add(service.id);
+				const nodeIds = index.serviceIdToNodes.get(service.id);
+				nodeIds?.forEach((id) => hiddenNodeIds.add(id));
+			}
+		}
+		if (entityTypes.has('IPAddress')) {
+			for (const ip of topology.ip_addresses) {
+				const nodeIds = index.ipAddressIdToNodes.get(ip.id);
+				nodeIds?.forEach((id) => hiddenNodeIds.add(id));
+			}
+		}
+		if (entityTypes.has('Interface')) {
+			for (const iface of topology.interfaces) {
+				const nodeIds = index.interfaceIdToNodes.get(iface.id);
+				nodeIds?.forEach((id) => hiddenNodeIds.add(id));
+			}
+		}
+		// Pure-inline entities (Port) have no element nodes — their hidden
+		// state is consulted directly by ElementNode render gates.
 	}
 
 	tagHiddenNodeIds.set(hiddenNodeIds);

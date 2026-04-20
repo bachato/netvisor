@@ -187,7 +187,7 @@
 			<IconComp class={`h-5 w-5 ${colorHelper.icon}`} fill={fillIcon ? 'currentColor' : 'none'} />
 		{/if}
 
-		<span class="text-s text-secondary whitespace-nowrap font-medium">
+		<span data-entity-header class="text-s text-secondary whitespace-nowrap font-medium">
 			{headerText}
 		</span>
 	</div>
@@ -205,7 +205,11 @@
 			<span data-fixed><LogoComp class="h-4 w-4 flex-shrink-0" /></span>
 		{/if}
 		{#if headerText}
-			<span data-fixed class="text-tertiary flex-shrink-0 whitespace-nowrap text-xs font-medium">
+			<span
+				data-fixed
+				data-entity-header
+				class="text-tertiary flex-shrink-0 whitespace-nowrap text-xs font-medium"
+			>
 				{headerText}{groupLabels.length > 0 ? ':' : ''}
 			</span>
 		{/if}
@@ -246,7 +250,11 @@
 			<span data-fixed><LogoComp class="h-4 w-4 flex-shrink-0" /></span>
 		{/if}
 		{#if headerText}
-			<span data-fixed class="text-tertiary whitespace-nowrap text-xs font-medium">
+			<span
+				data-fixed
+				data-entity-header
+				class="text-tertiary whitespace-nowrap text-xs font-medium"
+			>
 				{headerText}{groupLabels.length > 0 ? ':' : ''}
 			</span>
 		{/if}

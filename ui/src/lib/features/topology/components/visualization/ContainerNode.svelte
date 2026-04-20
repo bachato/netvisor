@@ -228,15 +228,27 @@
 
 	let tagHoverRingStyle = $derived.by(() => {
 		if (!currentHoveredTag) return '';
-		// Only highlight if the hovered entity type matches this container's type
-		if (currentHoveredTag.entityType !== containerType.toLowerCase()) return '';
+		// Only highlight when the hovered entity type matches this container's
+		// entity type. containerType here is the container_type discriminant
+		// (e.g. 'Subnet', 'Host'), which matches EntityDiscriminants casing.
+		if (currentHoveredTag.entityType !== containerType) return '';
 		const { tagId, color } = currentHoveredTag;
+		// Entity-type-wide hover (tagId === null): subdued gray outline.
+		if (tagId === null) {
+			return 'box-shadow: 0 0 0 2px rgb(156, 163, 175);';
+		}
 		const isUntagged = containerTags.length === 0;
 		const hasTag = tagId === UNTAGGED_SENTINEL ? isUntagged : containerTags.includes(tagId);
 		if (!hasTag) return '';
 		const ch = createColorHelper(color as Parameters<typeof createColorHelper>[0]);
 		return `box-shadow: 0 0 0 3px ${ch.rgb};`;
 	});
+
+	// Whether the hovered entity type matches this container — drives the
+	// dotted-underline on the header text.
+	let isEntityTypeHover = $derived(
+		currentHoveredTag?.tagId === null && currentHoveredTag?.entityType === containerType
+	);
 
 	// Pre-compute resolved subgroup rows for collapsed-root variant
 	let resolvedSubgroups: SubgroupRow[] = $derived.by(() => {
@@ -346,6 +358,7 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
 	class="relative"
+	class:entity-type-hover-active={isEntityTypeHover}
 	style="{nodeStyle} opacity: {nodeOpacity};{isSubcontainer ? ' cursor: pointer;' : ''}"
 	onpointerdown={isSubcontainer
 		? (e) => {

@@ -168,7 +168,9 @@
 			$activeView,
 			(($topologyOptions.request.hide_service_categories ?? {}) as Record<string, string[]>)[
 				$activeView
-			] ?? []
+			] ?? [],
+			(($topologyOptions.request.hide_entities ?? {}) as Record<string, string[]>)[$activeView] ??
+				[]
 		);
 	});
 

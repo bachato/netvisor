@@ -1,10 +1,11 @@
 <script lang="ts">
 	import type { components } from '$lib/api/schema';
-	import { UNTAGGED_SENTINEL, hoveredTag, type HoveredTag } from '../../../interactions';
+	import { UNTAGGED_SENTINEL, hoveredTag } from '../../../interactions';
 	import FilterGroup, { type FilterItem } from './FilterGroup.svelte';
 	import { concepts } from '$lib/shared/stores/metadata';
 
 	type TagType = components['schemas']['Tag'];
+	type EntityType = components['schemas']['EntityDiscriminants'];
 
 	let {
 		label,
@@ -18,7 +19,10 @@
 		tags: TagType[];
 		hiddenTagIds: string[];
 		onToggle: (tagId: string) => void;
-		entityType: HoveredTag['entityType'];
+		// Typed entity discriminant ('Host' | 'Service' | 'Subnet' etc).
+		// Callers previously passed lowercase 'host' | 'service' | 'subnet' —
+		// callers are updated to pass the typed value.
+		entityType: EntityType;
 		hasUntagged?: boolean;
 	} = $props();
 

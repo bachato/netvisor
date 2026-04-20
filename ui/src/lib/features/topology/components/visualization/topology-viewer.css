@@ -64,6 +64,16 @@
 	transition: opacity 0.2s ease-in-out;
 }
 
+/* Entity-type-wide hover from the filter panel section header.
+ * Applied to the node's inner wrapper when the hovered entity type matches
+ * this node's type. Underlines any element tagged as the entity name — see
+ * `data-entity-header` in ElementNode / ContainerHeader. */
+.entity-type-hover-active [data-entity-header] {
+	text-decoration: underline dotted;
+	text-underline-offset: 3px;
+	text-decoration-thickness: 1px;
+}
+
 /* Animate position + size during collapse/expand */
 .collapse-transition .svelte-flow__node {
 	transition:

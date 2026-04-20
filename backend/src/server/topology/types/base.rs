@@ -6,7 +6,7 @@ use crate::server::ip_addresses::r#impl::base::IPAddress;
 use crate::server::ports::r#impl::base::Port;
 use crate::server::services::r#impl::base::Service;
 use crate::server::services::r#impl::categories::ServiceCategory;
-use crate::server::shared::entities::ChangeTriggersTopologyStaleness;
+use crate::server::shared::entities::{ChangeTriggersTopologyStaleness, EntityDiscriminants};
 use crate::server::subnets::r#impl::base::Subnet;
 use crate::server::tags::r#impl::base::Tag;
 use crate::server::topology::types::edges::{Edge, EdgeHandle, EdgeTypeDiscriminants};
@@ -283,7 +283,13 @@ impl Default for TopologyLocalOptions {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, ToSchema)]
 pub struct TopologyRequestOptions {
-    pub hide_ports: bool,
+    /// Entity types hidden per view. Keyed by TopologyView, values are entity
+    /// types (matching those declared as container/element/inline in the
+    /// view's element_config). Hides every manifestation of the entity in
+    /// that view — element nodes, container nodes, and inline rows on
+    /// element cards. Supersedes the old `hide_ports` (L3-only, inline-only).
+    #[serde(default)]
+    pub hide_entities: HashMap<TopologyView, Vec<EntityDiscriminants>>,
     #[serde(default = "default_hide_service_categories")]
     pub hide_service_categories: HashMap<TopologyView, Vec<ServiceCategory>>,
     #[serde(default = "default_container_rules")]
@@ -348,7 +354,7 @@ fn default_element_rules() -> Vec<IdentifiedRule<ElementRule>> {
 impl Default for TopologyRequestOptions {
     fn default() -> Self {
         Self {
-            hide_ports: false,
+            hide_entities: HashMap::new(),
             hide_service_categories: default_hide_service_categories(),
             container_rules: default_container_rules(),
             element_rules: default_element_rules(),

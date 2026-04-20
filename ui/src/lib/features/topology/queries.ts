@@ -155,7 +155,7 @@ function defaultRequestOptions(): components['schemas']['TopologyRequestOptions'
 	}
 
 	return {
-		hide_ports: false,
+		hide_entities: {},
 		hide_service_categories: hideServiceCategories,
 		container_rules: containerRules,
 		element_rules: elementRules,

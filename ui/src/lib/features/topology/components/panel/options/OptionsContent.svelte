@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { SvelteSet } from 'svelte/reactivity';
+	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
+	import type { components } from '$lib/api/schema';
 	import {
 		topologyOptions,
 		updateTopologyOptions,
@@ -10,7 +11,7 @@
 	import { hoveredEdgeType } from '../../../interactions';
 	import { isDisabledEdge } from '../../../layout/edge-classification';
 	import { getTopologyEditState, getOptionDisabledTooltip } from '../../../state';
-	import { edgeTypes, views, serviceCategories, entities } from '$lib/shared/stores/metadata';
+	import { edgeTypes, views, serviceCategories } from '$lib/shared/stores/metadata';
 	import { activeView } from '../../../queries';
 	import { type Color } from '$lib/shared/utils/styling';
 	import viewsJson from '$lib/data/views.json';
@@ -19,19 +20,15 @@
 	import CategoryFilterGroup from './CategoryFilterGroup.svelte';
 	import FilterGroup from './FilterGroup.svelte';
 	import GroupingRuleEditor from './GroupingRuleEditor.svelte';
+	import EntityFilterHeader from './EntityFilterHeader.svelte';
 	import { useTagsQuery } from '$lib/features/tags/queries';
 	import {
-		common_hosts,
-		common_services,
-		common_subnets,
 		common_visual,
 		common_dependenciesLabel,
 		topology_bundleEdges,
 		topology_bundleEdgesHelp,
 		topology_dontFadeEdges,
 		topology_dontFadeEdgesHelp,
-		topology_hidePorts,
-		topology_hidePortsHelp,
 		topology_showMinimap,
 		topology_showMinimapHelp,
 		common_byCategory,
@@ -41,6 +38,8 @@
 		topology_groupsHelp,
 		topology_displayHelp
 	} from '$lib/paraglide/messages';
+
+	type EntityType = components['schemas']['EntityDiscriminants'];
 
 	let { activeTab }: { activeTab: 'filter' | 'group' | 'visual' } = $props();
 
@@ -75,36 +74,125 @@
 	let viewMetaObj = $derived(
 		views.getMetadata($activeView) as {
 			element_config?: {
-				container_entity: string | null;
-				element_entities: Array<{ entity_type: string; inline_entities: string[] }>;
+				container_entity: EntityType | null;
+				element_entities: Array<{ entity_type: EntityType; inline_entities: EntityType[] }>;
 			};
 		} | null
 	);
 	let elementConfig = $derived(viewMetaObj?.element_config);
-	let filterableEntities = $derived.by(() => {
+
+	// Entity types currently hidden in this view via the eye toggle.
+	let hiddenEntitiesThisView = $derived(
+		(($topologyOptions.request.hide_entities ?? {}) as Record<string, EntityType[]>)[$activeView] ??
+			[]
+	);
+
+	interface FilterSection {
+		entityType: EntityType;
+		roles: { container: boolean; element: boolean; inline: boolean };
+		hoverable: boolean;
+		togglePresent: boolean;
+		toggleDisabled: boolean;
+		hidden: boolean;
+	}
+
+	// Build the ordered filter-section list from the view config + current
+	// hide state. Applies the two-layer toggleability rule — see plan:
+	//   static:   togglePresent iff inline OR (element AND ≥2 element entities)
+	//   dynamic:  toggleDisabled iff would-hide-last-visible-element
+	let filterSections = $derived.by((): FilterSection[] => {
 		const config = elementConfig;
-		if (!config) return new SvelteSet<string>();
-		const set = new SvelteSet<string>();
-		if (config.container_entity) set.add(config.container_entity);
-		for (const ee of config.element_entities ?? []) {
-			set.add(ee.entity_type);
-			for (const inline of ee.inline_entities) set.add(inline);
-		}
-		// Expand element's parent taggable entity when the view has containers and the parent isn't already the container
-		if (config.container_entity) {
-			for (const ee of config.element_entities ?? []) {
-				const parentEntity = entities.getMetadata(ee.entity_type)?.parent_taggable_entity;
-				if (parentEntity && parentEntity !== config.container_entity) {
-					set.add(parentEntity);
-				}
+		if (!config) return [];
+		const elementCount = config.element_entities?.length ?? 0;
+		const hiddenElementCount = (config.element_entities ?? []).filter((ee) =>
+			hiddenEntitiesThisView.includes(ee.entity_type)
+		).length;
+		const visibleElementCount = elementCount - hiddenElementCount;
+
+		// Accumulate roles per entity type, preserving order: container first,
+		// then each element, then any pure-inline entity we haven't seen yet.
+		const order: EntityType[] = [];
+		const byEntity = new SvelteMap<EntityType, FilterSection['roles']>();
+		const push = (type: EntityType, role: keyof FilterSection['roles']) => {
+			let roles = byEntity.get(type);
+			if (!roles) {
+				roles = { container: false, element: false, inline: false };
+				byEntity.set(type, roles);
+				order.push(type);
 			}
+			roles[role] = true;
+		};
+		if (config.container_entity) push(config.container_entity, 'container');
+		for (const ee of config.element_entities ?? []) {
+			push(ee.entity_type, 'element');
+			for (const inline of ee.inline_entities) push(inline, 'inline');
 		}
-		return set;
+
+		return order.map((entityType) => {
+			const roles = byEntity.get(entityType)!;
+			const hidden = hiddenEntitiesThisView.includes(entityType);
+			const togglePresent = roles.inline || (roles.element && elementCount >= 2);
+			// Floor: can't hide the last visible element entity.
+			const toggleDisabled = togglePresent && !hidden && roles.element && visibleElementCount <= 1;
+			return {
+				entityType,
+				roles,
+				hoverable: roles.container || roles.element,
+				togglePresent,
+				toggleDisabled,
+				hidden
+			};
+		});
 	});
-	let showHostFilter = $derived(filterableEntities.has('Host'));
-	let showServiceFilter = $derived(filterableEntities.has('Service'));
-	let showSubnetFilter = $derived(filterableEntities.has('Subnet'));
-	let hasCategoryFilter = $derived(showServiceFilter);
+
+	// Service category toggles depend on the Service entity being in play
+	// (either element or inline) and not currently entity-hidden.
+	let hasCategoryFilter = $derived(
+		filterSections.some(
+			(s) => s.entityType === 'Service' && (s.roles.element || s.roles.inline) && !s.hidden
+		)
+	);
+
+	// Map from entity type to the tag list / untagged flag for the inline body.
+	let tagListByEntity = $derived.by(() => {
+		const m: Record<string, { tags: typeof hostTags; hasUntagged: boolean }> = {};
+		m['Host'] = { tags: hostTags, hasUntagged: hasUntaggedHosts };
+		m['Service'] = { tags: serviceTags, hasUntagged: hasUntaggedServices };
+		m['Subnet'] = { tags: subnetTags, hasUntagged: hasUntaggedSubnets };
+		return m;
+	});
+
+	function onToggleTagForEntity(entityType: EntityType, tagId: string) {
+		if (entityType === 'Host') toggleHostTag(tagId);
+		else if (entityType === 'Service') toggleServiceTag(tagId);
+		else if (entityType === 'Subnet') toggleSubnetTag(tagId);
+	}
+
+	function hiddenTagIdsForEntity(entityType: EntityType): string[] {
+		const f = $topologyOptions.local.tag_filter;
+		if (entityType === 'Host') return f?.hidden_host_tag_ids ?? [];
+		if (entityType === 'Service') return f?.hidden_service_tag_ids ?? [];
+		if (entityType === 'Subnet') return f?.hidden_subnet_tag_ids ?? [];
+		return [];
+	}
+
+	function toggleHiddenEntity(entityType: EntityType) {
+		const view = $activeView;
+		updateTopologyOptions((opts) => {
+			const map = ((opts.request.hide_entities ?? {}) as Record<string, EntityType[]>) ?? {};
+			const current = map[view] ?? [];
+			const next = current.includes(entityType)
+				? current.filter((e) => e !== entityType)
+				: [...current, entityType];
+			return {
+				...opts,
+				request: {
+					...opts.request,
+					hide_entities: { ...map, [view]: next }
+				}
+			};
+		});
+	}
 
 	// Toggle functions for tag filter
 	function toggleHostTag(tagId: string) {
@@ -337,15 +425,6 @@
 			key: 'show_minimap',
 			helpText: () => topology_showMinimapHelp(),
 			section: () => common_visual()
-		},
-		{
-			id: 'hide_ports',
-			label: () => topology_hidePorts(),
-			type: 'boolean',
-			path: 'request',
-			key: 'hide_ports',
-			helpText: () => topology_hidePortsHelp(),
-			section: () => common_visual()
 		}
 	];
 
@@ -415,50 +494,28 @@
 			/>
 		</div>
 
-		{#if showSubnetFilter}
+		{#each filterSections as section (section.entityType)}
+			{@const tagBundle = tagListByEntity[section.entityType]}
 			<div class="space-y-1.5">
-				<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
-					{common_subnets()}
-				</div>
-				<TagFilterGroup
-					tags={subnetTags}
-					hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_subnet_tag_ids ?? []}
-					onToggle={toggleSubnetTag}
-					entityType="subnet"
-					hasUntagged={hasUntaggedSubnets}
+				<EntityFilterHeader
+					entityType={section.entityType}
+					hoverable={section.hoverable}
+					togglePresent={section.togglePresent}
+					toggleDisabled={section.toggleDisabled}
+					hidden={section.hidden}
+					onToggle={toggleHiddenEntity}
 				/>
-			</div>
-		{/if}
-
-		{#if showHostFilter}
-			<div class="space-y-1.5">
-				<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
-					{common_hosts()}
-				</div>
-				<TagFilterGroup
-					tags={hostTags}
-					hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_host_tag_ids ?? []}
-					onToggle={toggleHostTag}
-					entityType="host"
-					hasUntagged={hasUntaggedHosts}
-				/>
-			</div>
-		{/if}
-
-		{#if showServiceFilter}
-			<div class="space-y-1.5">
-				<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
-					{common_services()}
-				</div>
-				<TagFilterGroup
-					label={common_byTag()}
-					tags={serviceTags}
-					hiddenTagIds={$topologyOptions.local.tag_filter?.hidden_service_tag_ids ?? []}
-					onToggle={toggleServiceTag}
-					entityType="service"
-					hasUntagged={hasUntaggedServices}
-				/>
-				{#if hasCategoryFilter}
+				{#if tagBundle}
+					<TagFilterGroup
+						label={section.entityType === 'Service' ? common_byTag() : undefined}
+						tags={tagBundle.tags}
+						hiddenTagIds={hiddenTagIdsForEntity(section.entityType)}
+						onToggle={(id) => onToggleTagForEntity(section.entityType, id)}
+						entityType={section.entityType}
+						hasUntagged={tagBundle.hasUntagged}
+					/>
+				{/if}
+				{#if section.entityType === 'Service' && hasCategoryFilter}
 					<CategoryFilterGroup
 						categories={allServiceCategoriesWithColors}
 						hiddenCategories={(
@@ -470,7 +527,7 @@
 					/>
 				{/if}
 			</div>
-		{/if}
+		{/each}
 	</div>
 {:else if activeTab === 'group'}
 	<!-- Group By -->
