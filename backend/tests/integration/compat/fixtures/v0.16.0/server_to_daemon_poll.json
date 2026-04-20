@@ -1,0 +1,22 @@
+{
+  "version": "0.16.0",
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/api/initialize",
+      "request_body": {
+        "api_key": "scp_d_hHk14G1RvcOsQl2rOw6MwaHwyBolLfLC",
+        "network_id": "d91240ca-f694-472b-b6f0-ddfe54797bd6"
+      },
+      "response_status": 200,
+      "response_body": {
+        "data": "Daemon initialized successfully",
+        "meta": {
+          "api_version": 1,
+          "server_version": "0.16.0"
+        },
+        "success": true
+      }
+    }
+  ]
+}
