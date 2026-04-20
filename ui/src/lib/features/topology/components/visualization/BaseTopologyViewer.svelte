@@ -677,6 +677,7 @@
 	let ignoreNextSelectionChange = false;
 
 	function handleNodeClick({ node, event }: { node: Node; event: MouseEvent | TouchEvent }) {
+		if (viewportMoved) return;
 		const isModifierClick = event instanceof MouseEvent && (event.ctrlKey || event.metaKey);
 		if (isModifierClick) {
 			handleModifierNodeClick(node, selectionStores);
@@ -689,6 +690,7 @@
 	}
 
 	function handleEdgeClick({ edge }: { edge: Edge; event: MouseEvent }) {
+		if (viewportMoved) return;
 		collapseAllBundles();
 		selectEdge(edge, selectionStores);
 		ignoreNextSelectionChange = true;
