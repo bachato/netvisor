@@ -33,6 +33,7 @@
 	import { getTopologyEditState } from '$lib/features/topology/state';
 	import { clearSelection } from '$lib/features/topology/selection';
 	import { useSubnetsQuery, isContainerSubnet } from '$lib/features/subnets/queries';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	import type { components } from '$lib/api/schema';
 	type TopologyView = components['schemas']['TopologyView'];
@@ -145,24 +146,48 @@
 		compact: true
 	});
 
-	// Edit: push the dep's member services into the canvas selection, clear the
-	// edge selection, and set the editingDependencyId store so the panel routes
-	// to InspectorMultiSelect in edit mode. Set editingDependencyId BEFORE clearing
-	// selectedEdge so the panel switches away from InspectorEdge synchronously —
-	// otherwise InspectorEdge briefly re-evaluates with a null edge and throws.
+	// Edit: push the dep's members into the canvas selection as whatever nodes
+	// represent them in the active view, clear the edge selection, and set
+	// editingDependencyId so the panel routes to InspectorMultiSelect in edit
+	// mode. Set editingDependencyId BEFORE clearing selectedEdge so the panel
+	// switches away from InspectorEdge synchronously — otherwise InspectorEdge
+	// briefly re-evaluates with a null edge and throws.
+	//
+	// Member→node mapping is view-aware. In Workloads / Application, Service
+	// is a direct element_entity so service IDs match node IDs. In L3, Service
+	// is inlined on IPAddress cards, so topology.nodes contains no Service
+	// entries — the matching node is the IPAddress the binding lives on.
+	// Collect both candidates per member and keep whichever actually exists in
+	// topology.nodes for the current view.
 	function startEditing() {
 		if (!group || !topology) return;
-		const serviceIds =
-			group.members.type === 'Services'
-				? group.members.service_ids
-				: group.members.binding_ids
-						.map((bid) => topology!.services.find((s) => s.bindings.some((b) => b.id === bid))?.id)
-						.filter((id): id is string => !!id);
 
-		// Wrap each TopologyNode as an xyflow Node with data pointing back to the
-		// TopologyNode — same shape the canvas puts into selectedNodes.
-		const serviceNodes: import('@xyflow/svelte').Node[] = serviceIds
-			.map((sid) => topology!.nodes.find((n) => n.id === sid))
+		const candidateNodeIds = new SvelteSet<string>();
+		const addServiceCandidates = (serviceId: string) => {
+			candidateNodeIds.add(serviceId);
+			const svc = topology!.services.find((s) => s.id === serviceId);
+			if (!svc) return;
+			for (const b of svc.bindings) {
+				if (b.ip_address_id) candidateNodeIds.add(b.ip_address_id);
+			}
+		};
+
+		if (group.members.type === 'Services') {
+			for (const sid of group.members.service_ids) addServiceCandidates(sid);
+		} else {
+			for (const bid of group.members.binding_ids) {
+				for (const svc of topology.services) {
+					const binding = svc.bindings.find((b) => b.id === bid);
+					if (!binding) continue;
+					candidateNodeIds.add(svc.id);
+					if (binding.ip_address_id) candidateNodeIds.add(binding.ip_address_id);
+					break;
+				}
+			}
+		}
+
+		const memberNodes: import('@xyflow/svelte').Node[] = [...candidateNodeIds]
+			.map((id) => topology!.nodes.find((n) => n.id === id))
 			.filter((n): n is NonNullable<typeof n> => !!n)
 			.map((n) => ({
 				id: n.id,
@@ -172,8 +197,8 @@
 			}));
 
 		editingDependencyId.set(group.id);
-		if (serviceNodes.length > 0) {
-			selectedNodes.set(serviceNodes);
+		if (memberNodes.length > 0) {
+			selectedNodes.set(memberNodes);
 		}
 		selectedEdge.set(null);
 	}
