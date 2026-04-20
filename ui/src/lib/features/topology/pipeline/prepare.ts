@@ -79,6 +79,27 @@ function getInlineContentKey(topo: Topology, view: string): string {
 // stepExpand to 4) is respected on later navigations.
 let defaultsAppliedThisSession = false;
 
+/** Signature of the user's inline hide state for this view. Changing a
+ *  toggle flips this value → topologyChanged → measure + ELK re-run, so
+ *  cards whose content expands/collapses don't overlap their neighbours. */
+function getHideStateKey(view: string): string {
+	const opts = get(topologyOptions);
+	const request = opts.request as unknown as {
+		hide_entities?: Record<string, string[]>;
+		hide_metadata_values?: Record<string, Record<string, Record<string, string[]>>>;
+	};
+	const hiddenEntities = [...(request.hide_entities?.[view] ?? [])].sort().join(',');
+	const hiddenMeta = request.hide_metadata_values?.[view] ?? {};
+	const metaEntries: string[] = [];
+	for (const entityType of Object.keys(hiddenMeta).sort()) {
+		for (const filterType of Object.keys(hiddenMeta[entityType]).sort()) {
+			const vals = [...(hiddenMeta[entityType][filterType] ?? [])].sort().join(',');
+			metaEntries.push(`${entityType}.${filterType}=[${vals}]`);
+		}
+	}
+	return `E[${hiddenEntities}];M[${metaEntries.join(';')}]`;
+}
+
 function getStructureKey(topo: Topology, view: string): string {
 	const nodeKeys = topo.nodes
 		.map((n) => {
@@ -88,7 +109,8 @@ function getStructureKey(topo: Topology, view: string): string {
 		.sort()
 		.join(',');
 	const inlineKey = getInlineContentKey(topo, view);
-	return `${topo.nodes.length}:${topo.edges.length}:${nodeKeys}|${inlineKey}`;
+	const hideKey = getHideStateKey(view);
+	return `${topo.nodes.length}:${topo.edges.length}:${nodeKeys}|${inlineKey}|${hideKey}`;
 }
 
 /**

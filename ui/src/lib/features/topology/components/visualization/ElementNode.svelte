@@ -526,30 +526,52 @@
 		return `box-shadow: 0 0 0 3px ${colorHelper.rgb};`;
 	});
 
-	// Card glow for inline-role hover (or legacy category hover).
-	// Entity-wide inline hover pulses in a neutral gray; tag-scoped inline
-	// hover pulses in the tag's color on cards that actually contain a
-	// service with the hovered tag.
+	// Generic pulse style for an inline row whose entity-type matches the
+	// active hover. Applied directly to the row's text span — works for any
+	// inline entity (service name row, port line row, future ones) as long
+	// as the caller passes the row's entity type and its tag list. Pass [] for
+	// entities that don't carry tags (ports today).
+	function inlineRowPulse(rowEntityType: string, rowTags: string[]): string {
+		if (hoveredRelationship !== 'inline' || !currentHoveredTag) return '';
+		if (currentHoveredTag.entityType !== rowEntityType) return '';
+		const { tagId, color } = currentHoveredTag;
+		// Entity-wide (tagId null): neutral gray pulse on every matching row.
+		if (tagId === null) {
+			return 'color: rgb(156, 163, 175); --text-pulse-color: rgb(156, 163, 175);';
+		}
+		// Tag-scoped: only rows whose entity carries the hovered tag.
+		if (!color) return '';
+		const hasTag = tagId === UNTAGGED_SENTINEL ? rowTags.length === 0 : rowTags.includes(tagId);
+		if (!hasTag) return '';
+		const ch = createColorHelper(color as Parameters<typeof createColorHelper>[0]);
+		return `color: ${ch.rgb}; --text-pulse-color: ${ch.rgb};`;
+	}
+
+	// Card glow for tag-scoped inline hover (and legacy category hover).
+	// Entity-wide inline hover uses per-row text pulses instead — every
+	// card that inlines the hovered entity would glow otherwise, which
+	// isn't useful discrimination.
 	let serviceHoverShadowStyle = $derived.by(() => {
 		if (!nodeRenderData?.showServices) return '';
 		const services = nodeRenderData.services;
-		if (hoveredRelationship === 'inline' && currentHoveredTag) {
+		if (
+			hoveredRelationship === 'inline' &&
+			currentHoveredTag &&
+			currentHoveredTag.tagId !== null &&
+			currentHoveredTag.color
+		) {
 			const { tagId, color, entityType } = currentHoveredTag;
-			if (tagId === null) {
-				// Entity-wide inline hover: neutral pulse on any card that
-				// inlines this entity type.
-				return '--pulse-color: rgb(156, 163, 175);';
-			}
-			// Tag-scoped inline hover — only Service tags are wired through
-			// today (ports don't carry tags). Other entity types with tags
-			// would follow the same pattern.
-			if (entityType === 'Service' && color) {
+			// Only fire for entity types that carry tags today (Service). New
+			// taggable inline entities would extend via the same per-row tag
+			// lookup. For now, no generic registry to resolve "tags of an
+			// arbitrary inline entity instance on this card" exists.
+			if (entityType === 'Service') {
 				for (const service of services) {
 					const isUntagged = service.tags.length === 0;
 					const hasTag = tagId === UNTAGGED_SENTINEL ? isUntagged : service.tags.includes(tagId);
 					if (hasTag) {
-						const colorHelper = createColorHelper(color as Parameters<typeof createColorHelper>[0]);
-						return `--pulse-color: ${colorHelper.rgb};`;
+						const ch = createColorHelper(color as Parameters<typeof createColorHelper>[0]);
+						return `--pulse-color: ${ch.rgb};`;
 					}
 				}
 			}
@@ -629,31 +651,15 @@
 			{#if nodeRenderData.showServices}
 				{#snippet serviceCard(service: (typeof nodeRenderData.services)[number])}
 					{@const isServiceTagHidden =
-						nodeRenderData.elementType !== 'Service' && hiddenServices.has(service.id)}
+						inlinesService &&
+						!serviceInlineHidden &&
+						nodeRenderData.elementType !== 'Service' &&
+						hiddenServices.has(service.id)}
 					{@const ServiceIcon = serviceDefinitions.getIconComponent(service.service_definition)}
 					{@const serviceColorHelper = serviceDefinitions.getColorHelper(
 						service.service_definition
 					)}
-					{@const serviceTagHighlight = (() => {
-						// Tag-scoped inline Service hover: highlight the matching
-						// service's text. Only fires when this card is an inline
-						// host for Service (NOT when the card itself IS a service
-						// element — that case gets the card-border instead).
-						if (
-							hoveredRelationship !== 'inline' ||
-							!currentHoveredTag ||
-							currentHoveredTag.entityType !== 'Service' ||
-							currentHoveredTag.tagId === null ||
-							!currentHoveredTag.color
-						)
-							return '';
-						const { tagId, color } = currentHoveredTag;
-						const isUntagged = service.tags.length === 0;
-						const hasTag = tagId === UNTAGGED_SENTINEL ? isUntagged : service.tags.includes(tagId);
-						if (!hasTag) return '';
-						const colorHelper = createColorHelper(color as Parameters<typeof createColorHelper>[0]);
-						return `color: ${colorHelper.rgb}; --text-pulse-color: ${colorHelper.rgb};`;
-					})()}
+					{@const serviceTagHighlight = inlineRowPulse('Service', service.tags)}
 					{@const serviceCategoryHighlight = (() => {
 						if (!currentHoveredCategory) return '';
 						const serviceCategory = serviceDefinitions.getCategory(service.service_definition);
@@ -688,7 +694,12 @@
 							</div>
 						{/if}
 						{#if inlinesPort && !portInlineHidden && service.bindings.filter((b) => b.type == 'Port').length > 0}
-							<span class="text-tertiary mt-1 text-center text-xs"
+							{@const portPulse = inlineRowPulse('Port', [])}
+							<span
+								class="text-tertiary mt-1 text-center text-xs {portPulse
+									? 'animate-text-pulse-highlight'
+									: ''}"
+								style="transition: color 0.15s; {portPulse}"
 								>{service.bindings
 									.map((b) => {
 										if (
@@ -767,7 +778,12 @@
 										</div>
 									{/if}
 									{#if inlinesPort && !portInlineHidden && service.bindings.filter((b) => b.type == 'Port').length > 0}
-										<span class="text-tertiary mt-1 text-center text-xs"
+										{@const portPulseExp = inlineRowPulse('Port', [])}
+										<span
+											class="text-tertiary mt-1 text-center text-xs {portPulseExp
+												? 'animate-text-pulse-highlight'
+												: ''}"
+											style="transition: color 0.15s; {portPulseExp}"
 											>{service.bindings
 												.map((b) => {
 													if (
