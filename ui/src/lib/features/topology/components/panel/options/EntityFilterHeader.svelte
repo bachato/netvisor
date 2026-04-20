@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { components } from '$lib/api/schema';
-	import { Eye, EyeOff, X } from 'lucide-svelte';
+	import { Eye, EyeOff, FunnelX } from 'lucide-svelte';
 	import { entities } from '$lib/shared/stores/metadata';
 	import { hoveredTag } from '../../../interactions';
 	import {
@@ -61,18 +61,18 @@
 		{#if activeFilterCount > 0 && onClearSection}
 			<button
 				type="button"
-				class="text-tertiary hover:text-primary bg-surface-secondary flex items-center gap-0.5 rounded px-1 py-0.5 text-xs transition-colors"
+				class="btn-secondary gap-1 rounded px-1.5 py-0 text-xs font-medium"
 				title={topology_clearSectionFilters({ entity: label })}
 				onclick={() => onClearSection(entityType)}
 			>
-				<X class="h-3 w-3" />
+				<FunnelX class="h-3 w-3" />
 				{activeFilterCount}
 			</button>
 		{/if}
 		{#if togglePresent}
 			<button
 				type="button"
-				class="text-tertiary hover:text-secondary flex items-center rounded p-0.5 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+				class="btn-secondary rounded px-1 py-0"
 				disabled={toggleDisabled}
 				title={toggleDisabled
 					? topology_hideLastElementDisabled({ entity: label })

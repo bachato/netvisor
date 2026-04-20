@@ -225,11 +225,7 @@
 	}
 
 	function userFilterCountFor(entityType: EntityType): number {
-		return (
-			hiddenTagIdsForEntity(entityType).length +
-			countUserMetadataValues(entityType) +
-			(hiddenEntitiesThisView.includes(entityType) ? 1 : 0)
-		);
+		return hiddenTagIdsForEntity(entityType).length + countUserMetadataValues(entityType);
 	}
 
 	let userFilterTotal = $derived(
@@ -248,14 +244,6 @@
 			if (entityType === 'Host') newTf.hidden_host_tag_ids = [];
 			if (entityType === 'Service') newTf.hidden_service_tag_ids = [];
 			if (entityType === 'Subnet') newTf.hidden_subnet_tag_ids = [];
-
-			const hideEntities = {
-				...((opts.request.hide_entities ?? {}) as Record<string, EntityType[]>)
-			};
-			if (hideEntities[view]) {
-				hideEntities[view] = hideEntities[view].filter((e) => e !== entityType);
-				if (hideEntities[view].length === 0) delete hideEntities[view];
-			}
 
 			const hideMeta = {
 				...((opts.request.hide_metadata_values ?? {}) as Record<
@@ -283,7 +271,6 @@
 				local: { ...opts.local, tag_filter: newTf },
 				request: {
 					...opts.request,
-					hide_entities: hideEntities,
 					hide_metadata_values: hideMeta
 				}
 			};
@@ -293,11 +280,6 @@
 	function clearAllFiltersForView() {
 		const view = $activeView;
 		updateTopologyOptions((opts) => {
-			const hideEntities = {
-				...((opts.request.hide_entities ?? {}) as Record<string, EntityType[]>)
-			};
-			delete hideEntities[view];
-
 			const hideMeta = {
 				...((opts.request.hide_metadata_values ?? {}) as Record<
 					string,
@@ -320,7 +302,6 @@
 				},
 				request: {
 					...opts.request,
-					hide_entities: hideEntities,
 					hide_metadata_values: hideMeta
 				}
 			};
@@ -328,6 +309,7 @@
 	}
 
 	function toggleHiddenEntity(entityType: EntityType) {
+		clearFiltersForEntity(entityType);
 		const view = $activeView;
 		updateTopologyOptions((opts) => {
 			const map = ((opts.request.hide_entities ?? {}) as Record<string, EntityType[]>) ?? {};
