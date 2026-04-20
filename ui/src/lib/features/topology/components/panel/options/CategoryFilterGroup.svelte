@@ -1,15 +1,22 @@
 <script lang="ts">
 	import type { Color } from '$lib/shared/utils/styling';
-	import { hoveredServiceCategory } from '../../../interactions';
+	import type { components } from '$lib/api/schema';
+	import { hoveredMetadata } from '../../../interactions';
 	import FilterGroup from './FilterGroup.svelte';
 
+	type EntityType = components['schemas']['EntityDiscriminants'];
+
 	let {
+		entityType,
+		filterType,
 		categories,
 		hiddenCategories,
 		onToggle,
 		disabled = false,
 		label = undefined
 	}: {
+		entityType: EntityType;
+		filterType: string;
 		categories: { value: string; label: string; color: Color }[];
 		hiddenCategories: string[];
 		onToggle: (category: string) => void;
@@ -18,11 +25,11 @@
 	} = $props();
 
 	function handleHoverStart(value: string, color: Color) {
-		hoveredServiceCategory.set({ category: value, color: color as string });
+		hoveredMetadata.set({ entityType, filterType, valueId: value, color: color as string });
 	}
 
 	function handleHoverEnd() {
-		hoveredServiceCategory.set(null);
+		hoveredMetadata.set(null);
 	}
 </script>
 

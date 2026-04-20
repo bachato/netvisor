@@ -45,51 +45,49 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<!-- Name + eye live in a single inline-flex block so the eye is visually
-  anchored to the entity name (same-row, small gap). Hover + eye-click
-  affordances are scoped to this block, not the whole section width. -->
-<div class="flex items-center">
-	<div
-		class="filter-section-name flex select-none items-center gap-1.5"
+<!-- Hoverable name sits alongside the buttons. Hover affordance is scoped
+  to the name only — the buttons live outside so hovering them does not
+  trigger the entity-wide node highlight. -->
+<div class="flex select-none items-center gap-1.5">
+	<span
+		class="filter-section-name text-secondary text-xs font-semibold uppercase tracking-wide"
 		class:filter-section-name-hoverable={hoverable}
 		onmouseenter={onEnter}
 		onmouseleave={onLeave}
 	>
-		<span class="text-secondary text-xs font-semibold uppercase tracking-wide">
-			{label}
-		</span>
-		{#if activeFilterCount > 0 && onClearSection}
-			<button
-				type="button"
-				class="btn-secondary gap-1 rounded px-1.5 py-0 text-xs font-medium"
-				title={topology_clearSectionFilters({ entity: label })}
-				onclick={() => onClearSection(entityType)}
-			>
-				<FunnelX class="h-3 w-3" />
-				{activeFilterCount}
-			</button>
-		{/if}
-		{#if togglePresent}
-			<button
-				type="button"
-				class="btn-secondary rounded px-1 py-0"
-				disabled={toggleDisabled}
-				title={toggleDisabled
-					? topology_hideLastElementDisabled({ entity: label })
-					: hidden
-						? topology_showEntity({ entity: label })
-						: topology_hideEntity({ entity: label })}
-				aria-pressed={hidden}
-				onclick={() => onToggle(entityType)}
-			>
-				{#if hidden}
-					<EyeOff class="h-3.5 w-3.5" />
-				{:else}
-					<Eye class="h-3.5 w-3.5" />
-				{/if}
-			</button>
-		{/if}
-	</div>
+		{label}
+	</span>
+	{#if activeFilterCount > 0 && onClearSection}
+		<button
+			type="button"
+			class="btn-secondary gap-1 rounded px-1.5 py-0 text-xs font-medium"
+			title={topology_clearSectionFilters({ entity: label })}
+			onclick={() => onClearSection(entityType)}
+		>
+			<FunnelX class="h-3 w-3" />
+			{activeFilterCount}
+		</button>
+	{/if}
+	{#if togglePresent}
+		<button
+			type="button"
+			class="btn-secondary rounded px-1 py-0"
+			disabled={toggleDisabled}
+			title={toggleDisabled
+				? topology_hideLastElementDisabled({ entity: label })
+				: hidden
+					? topology_showEntity({ entity: label })
+					: topology_hideEntity({ entity: label })}
+			aria-pressed={hidden}
+			onclick={() => onToggle(entityType)}
+		>
+			{#if hidden}
+				<EyeOff class="h-3.5 w-3.5" />
+			{:else}
+				<Eye class="h-3.5 w-3.5" />
+			{/if}
+		</button>
+	{/if}
 </div>
 
 <style>
@@ -99,7 +97,7 @@
 	/* Always-on dotted underline when the section is hoverable — acts as a
 	 * standing affordance that the name is interactive, rather than only
 	 * appearing on hover. */
-	.filter-section-name-hoverable > span {
+	.filter-section-name-hoverable {
 		text-decoration: underline dotted;
 		text-underline-offset: 3px;
 		text-decoration-thickness: 1px;

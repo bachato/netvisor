@@ -1243,7 +1243,7 @@
 	"topology_multiSelectPreviewEdge": "Preview Edge",
 	"topology_multiSelectReadOnlyHint": "This is a read-only view.",
 	"topology_multiSelectStaleHint": "Rebuild this topology to make changes.",
-	"topology_nFiltersApplied": "Filters applied: {count}",
+	"topology_nFiltersApplied": "{count} filters applied to {viewName} view",
 	"topology_namePlaceholder": "Enter topology name",
 	"topology_noHiddenRules": "No hidden rules",
 	"topology_noNodesToExport": "No nodes to export",

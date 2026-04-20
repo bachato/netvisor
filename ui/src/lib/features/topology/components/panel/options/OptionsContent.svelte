@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
+	import { FunnelX } from 'lucide-svelte';
 	import type { components } from '$lib/api/schema';
 	import {
 		topologyOptions,
@@ -604,24 +605,28 @@
 {#if activeTab === 'filter'}
 	<!-- Filters -->
 	<div class="space-y-3">
-		<p class="text-secondary text-xs font-medium">
-			{topology_filtersApplyToView({ viewName: viewMeta?.name ?? $activeView })}
-		</p>
-
-		{#if userFilterTotal > 0}
-			<div class="bg-surface-secondary flex items-center justify-between rounded px-2 py-1.5">
-				<span class="text-secondary text-xs font-medium">
-					{topology_nFiltersApplied({ count: userFilterTotal })}
-				</span>
+		<div class="flex items-center justify-between gap-2">
+			<p class="text-secondary text-xs font-medium">
+				{#if userFilterTotal > 0}
+					{topology_nFiltersApplied({
+						count: userFilterTotal,
+						viewName: viewMeta?.name ?? $activeView
+					})}
+				{:else}
+					{topology_filtersApplyToView({ viewName: viewMeta?.name ?? $activeView })}
+				{/if}
+			</p>
+			{#if userFilterTotal > 0}
 				<button
 					type="button"
-					class="text-tertiary hover:text-primary text-xs underline"
+					class="btn-secondary shrink-0 gap-1 rounded px-1.5 py-0 text-xs font-medium"
 					onclick={clearAllFiltersForView}
 				>
+					<FunnelX class="h-3 w-3" />
 					{common_clearAll()}
 				</button>
-			</div>
-		{/if}
+			{/if}
+		</div>
 
 		<div class="space-y-1.5">
 			<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
@@ -668,6 +673,8 @@
 						{/if}
 						{#each metadataFilters as filter (filter.filter_type)}
 							<CategoryFilterGroup
+								entityType={section.entityType}
+								filterType={filter.filter_type}
 								categories={filter.values.map((v) => ({
 									value: v.id,
 									label: v.label,

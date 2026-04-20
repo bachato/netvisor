@@ -21,7 +21,8 @@
 		tagHiddenServiceIds,
 		searchHiddenNodeIds,
 		hoveredTag,
-		hoveredServiceCategory,
+		hoveredMetadata,
+		FILTER_VALUE_EXTRACTORS,
 		expandedPortNodeIds,
 		toggleExpandedPorts,
 		UNTAGGED_SENTINEL
@@ -79,9 +80,9 @@
 	});
 
 	// Subscribe to service category hover state
-	let currentHoveredCategory = $state(get(hoveredServiceCategory));
-	hoveredServiceCategory.subscribe((value) => {
-		currentHoveredCategory = value;
+	let currentHoveredMetadata = $state(get(hoveredMetadata));
+	hoveredMetadata.subscribe((value) => {
+		currentHoveredMetadata = value;
 	});
 
 	const topo = useTopology();
@@ -491,10 +492,53 @@
 		return [];
 	}
 
+	// Metadata hover context — mirrors `hoveredRelationship` + tag ring/pulse
+	// but driven by `hoveredMetadata`. Element-mode when this card's own
+	// entity matches the extractor, inline-mode when an inline row matches.
+	// Host metadata also bubbles up to IPAddress/Interface cards (same
+	// fallback as cardEntityTags).
+	let metadataHoverContext = $derived.by(
+		(): {
+			mode: 'element' | 'inline';
+			color: string;
+		} | null => {
+			if (!currentHoveredMetadata || !resolved) return null;
+			const { entityType, filterType, valueId, color } = currentHoveredMetadata;
+			const extractor = FILTER_VALUE_EXTRACTORS[entityType]?.[filterType];
+			if (!extractor) return null;
+
+			const elType = nodeRenderData?.elementType;
+			let cardEntity: unknown | null = null;
+			if (elType === entityType) {
+				if (entityType === 'Host') cardEntity = resolved.host ?? null;
+				else if (entityType === 'Service') cardEntity = resolved.services[0] ?? null;
+			} else if (entityType === 'Host' && (elType === 'IPAddress' || elType === 'Interface')) {
+				cardEntity = resolved.host ?? null;
+			}
+			if (cardEntity && extractor(cardEntity) === valueId) {
+				return { mode: 'element', color };
+			}
+
+			if (entityType === 'Service' && nodeRenderData?.services?.length) {
+				for (const service of nodeRenderData.services) {
+					if (extractor(service) === valueId) return { mode: 'inline', color };
+				}
+			}
+			return null;
+		}
+	);
+
 	// Card border for element-role hover. Subdued gray when entity-wide
 	// (tagId null); tag-coloured when tag-scoped AND the card's entity
-	// actually carries the hovered tag.
+	// actually carries the hovered tag. Metadata-scoped hover uses the
+	// same border treatment when this card's own entity matches.
 	let tagHoverRingStyle = $derived.by(() => {
+		if (metadataHoverContext?.mode === 'element') {
+			const ch = createColorHelper(
+				metadataHoverContext.color as Parameters<typeof createColorHelper>[0]
+			);
+			return `box-shadow: 0 0 0 3px ${ch.rgb};`;
+		}
 		if (hoveredRelationship !== 'element' || !currentHoveredTag) return '';
 		const { tagId, color } = currentHoveredTag;
 		if (tagId === null) {
@@ -557,16 +601,11 @@
 				}
 			}
 		}
-		if (currentHoveredCategory) {
-			for (const service of services) {
-				const serviceCategory = serviceDefinitions.getCategory(service.service_definition);
-				if (serviceCategory === currentHoveredCategory.category) {
-					const colorHelper = createColorHelper(
-						currentHoveredCategory.color as Parameters<typeof createColorHelper>[0]
-					);
-					return `--pulse-color: ${colorHelper.rgb};`;
-				}
-			}
+		if (metadataHoverContext?.mode === 'inline') {
+			const ch = createColorHelper(
+				metadataHoverContext.color as Parameters<typeof createColorHelper>[0]
+			);
+			return `--pulse-color: ${ch.rgb};`;
 		}
 		return '';
 	});
@@ -636,14 +675,18 @@
 						service.service_definition
 					)}
 					{@const serviceTagHighlight = inlineRowPulse('Service', service.tags)}
-					{@const serviceCategoryHighlight = (() => {
-						if (!currentHoveredCategory) return '';
-						const serviceCategory = serviceDefinitions.getCategory(service.service_definition);
-						if (serviceCategory !== currentHoveredCategory.category) return '';
-						const colorHelper = createColorHelper(
-							currentHoveredCategory.color as Parameters<typeof createColorHelper>[0]
+					{@const serviceMetadataHighlight = (() => {
+						if (metadataHoverContext?.mode !== 'inline') return '';
+						if (!currentHoveredMetadata || currentHoveredMetadata.entityType !== 'Service')
+							return '';
+						const extractor =
+							FILTER_VALUE_EXTRACTORS['Service']?.[currentHoveredMetadata.filterType];
+						if (!extractor) return '';
+						if (extractor(service) !== currentHoveredMetadata.valueId) return '';
+						const ch = createColorHelper(
+							currentHoveredMetadata.color as Parameters<typeof createColorHelper>[0]
 						);
-						return `color: ${colorHelper.rgb}; --text-pulse-color: ${colorHelper.rgb};`;
+						return `color: ${ch.rgb}; --text-pulse-color: ${ch.rgb};`;
 					})()}
 					<div
 						class="flex flex-col items-center justify-center py-2"
@@ -662,10 +705,10 @@
 								<ServiceIcon class="h-5 w-5 flex-shrink-0 {serviceColorHelper.icon}" />
 								<span
 									class="text-m text-secondary truncate {serviceTagHighlight ||
-									serviceCategoryHighlight
+									serviceMetadataHighlight
 										? 'animate-text-pulse-highlight'
 										: ''}"
-									style="transition: color 0.15s; {serviceTagHighlight || serviceCategoryHighlight}"
+									style="transition: color 0.15s; {serviceTagHighlight || serviceMetadataHighlight}"
 								>
 									{service.name}
 								</span>

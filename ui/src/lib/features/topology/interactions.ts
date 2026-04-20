@@ -65,12 +65,17 @@ export interface HoveredTag {
 }
 export const hoveredTag = writable<HoveredTag | null>(null);
 
-// Service category hover state for highlighting services in the same category
-export interface HoveredServiceCategory {
-	category: string;
+// Generic metadata-value hover. Mirrors the tag hover loop but for any
+// (entity type, filter type, value id) tuple declared by a view's
+// element_config.metadata_filters — Service.Category, Host.Virtualization,
+// and future extractor registrations below.
+export interface HoveredMetadata {
+	entityType: import('$lib/api/schema').components['schemas']['EntityDiscriminants'];
+	filterType: string;
+	valueId: string;
 	color: string;
 }
-export const hoveredServiceCategory = writable<HoveredServiceCategory | null>(null);
+export const hoveredMetadata = writable<HoveredMetadata | null>(null);
 
 // Edge type hover state for highlighting edges of a specific type
 export interface HoveredEdgeType {
@@ -183,8 +188,8 @@ function hideContainersAndDescendants(
  * matches these values against the user's hide set to decide whether to
  * hide each entity. Adding a new filter = one line here + a backend impl.
  */
-type FilterValueExtractor = (entity: unknown) => string | null;
-const FILTER_VALUE_EXTRACTORS: Record<string, Record<string, FilterValueExtractor>> = {
+export type FilterValueExtractor = (entity: unknown) => string | null;
+export const FILTER_VALUE_EXTRACTORS: Record<string, Record<string, FilterValueExtractor>> = {
 	Service: {
 		Category: (s) =>
 			serviceDefinitions.getCategory((s as { service_definition: string }).service_definition) ??
