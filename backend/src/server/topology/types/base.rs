@@ -7,6 +7,7 @@ use crate::server::ports::r#impl::base::Port;
 use crate::server::services::r#impl::base::Service;
 use crate::server::services::r#impl::categories::ServiceCategory;
 use crate::server::shared::entities::{ChangeTriggersTopologyStaleness, EntityDiscriminants};
+use crate::server::shared::types::metadata::HasId;
 use crate::server::subnets::r#impl::base::Subnet;
 use crate::server::tags::r#impl::base::Tag;
 use crate::server::topology::types::edges::{Edge, EdgeHandle, EdgeTypeDiscriminants};
@@ -15,7 +16,9 @@ use crate::server::topology::types::grouping::{
 };
 use crate::server::topology::types::layout::{Ixy, Uxy};
 use crate::server::topology::types::nodes::Node;
-use crate::server::topology::types::views::{TopologyView, TopologyViewSupport};
+use crate::server::topology::types::views::{
+    MetadataFilterType, TopologyView, TopologyViewSupport,
+};
 use crate::server::vlans::r#impl::base::Vlan;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -290,8 +293,15 @@ pub struct TopologyRequestOptions {
     /// element cards. Supersedes the old `hide_ports` (L3-only, inline-only).
     #[serde(default)]
     pub hide_entities: HashMap<TopologyView, Vec<EntityDiscriminants>>,
-    #[serde(default = "default_hide_service_categories")]
-    pub hide_service_categories: HashMap<TopologyView, Vec<ServiceCategory>>,
+    /// Generic per-(view, entity, filter) hide-set for metadata filters
+    /// (Category, Virtualization, etc). Supersedes the old
+    /// `hide_service_categories`; nested so JSON keys are strings all the
+    /// way down.
+    #[serde(default = "default_hide_metadata_values")]
+    pub hide_metadata_values: HashMap<
+        TopologyView,
+        HashMap<EntityDiscriminants, HashMap<MetadataFilterType, Vec<String>>>,
+    >,
     #[serde(default = "default_container_rules")]
     pub container_rules: HashMap<TopologyView, Vec<IdentifiedRule<ContainerRule>>>,
     #[serde(default = "default_element_rules")]
@@ -300,9 +310,24 @@ pub struct TopologyRequestOptions {
     pub view: TopologyView,
 }
 
-fn default_hide_service_categories() -> HashMap<TopologyView, Vec<ServiceCategory>> {
+fn default_hide_metadata_values()
+-> HashMap<TopologyView, HashMap<EntityDiscriminants, HashMap<MetadataFilterType, Vec<String>>>> {
+    // Hide OpenPorts category on Service in every view — same behaviour as
+    // the legacy `default_hide_service_categories`.
     TopologyView::iter()
-        .map(|p| (p, vec![ServiceCategory::OpenPorts]))
+        .map(|view| {
+            let mut by_filter: HashMap<MetadataFilterType, Vec<String>> = HashMap::new();
+            by_filter.insert(
+                MetadataFilterType::Category,
+                vec![ServiceCategory::OpenPorts.id().to_string()],
+            );
+            let mut by_entity: HashMap<
+                EntityDiscriminants,
+                HashMap<MetadataFilterType, Vec<String>>,
+            > = HashMap::new();
+            by_entity.insert(EntityDiscriminants::Service, by_filter);
+            (view, by_entity)
+        })
         .collect()
 }
 
@@ -355,7 +380,7 @@ impl Default for TopologyRequestOptions {
     fn default() -> Self {
         Self {
             hide_entities: HashMap::new(),
-            hide_service_categories: default_hide_service_categories(),
+            hide_metadata_values: default_hide_metadata_values(),
             container_rules: default_container_rules(),
             element_rules: default_element_rules(),
             view: TopologyView::default(),

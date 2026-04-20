@@ -40,32 +40,49 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div
-	class="flex items-center justify-between"
-	onmouseenter={onEnter}
-	onmouseleave={onLeave}
->
-	<span class="text-secondary text-xs font-semibold uppercase tracking-wide">
-		{label}
-	</span>
-	{#if togglePresent}
-		<button
-			type="button"
-			class="text-tertiary hover:text-secondary flex items-center rounded p-0.5 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
-			disabled={toggleDisabled}
-			title={toggleDisabled
-				? topology_hideLastElementDisabled({ entity: label })
-				: hidden
-					? topology_showEntity({ entity: label })
-					: topology_hideEntity({ entity: label })}
-			aria-pressed={hidden}
-			onclick={() => onToggle(entityType)}
-		>
-			{#if hidden}
-				<EyeOff class="h-3.5 w-3.5" />
-			{:else}
-				<Eye class="h-3.5 w-3.5" />
-			{/if}
-		</button>
-	{/if}
+<!-- Name + eye live in a single inline-flex block so the eye is visually
+  anchored to the entity name (same-row, small gap). Hover + eye-click
+  affordances are scoped to this block, not the whole section width. -->
+<div class="flex items-center">
+	<div
+		class="filter-section-name flex select-none items-center gap-1.5"
+		class:filter-section-name-hoverable={hoverable}
+		onmouseenter={onEnter}
+		onmouseleave={onLeave}
+	>
+		<span class="text-secondary text-xs font-semibold uppercase tracking-wide">
+			{label}
+		</span>
+		{#if togglePresent}
+			<button
+				type="button"
+				class="text-tertiary hover:text-secondary flex items-center rounded p-0.5 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+				disabled={toggleDisabled}
+				title={toggleDisabled
+					? topology_hideLastElementDisabled({ entity: label })
+					: hidden
+						? topology_showEntity({ entity: label })
+						: topology_hideEntity({ entity: label })}
+				aria-pressed={hidden}
+				onclick={() => onToggle(entityType)}
+			>
+				{#if hidden}
+					<EyeOff class="h-3.5 w-3.5" />
+				{:else}
+					<Eye class="h-3.5 w-3.5" />
+				{/if}
+			</button>
+		{/if}
+	</div>
 </div>
+
+<style>
+	.filter-section-name {
+		cursor: default;
+	}
+	.filter-section-name-hoverable:hover > span {
+		text-decoration: underline dotted;
+		text-underline-offset: 3px;
+		text-decoration-thickness: 1px;
+	}
+</style>

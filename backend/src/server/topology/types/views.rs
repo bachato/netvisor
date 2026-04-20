@@ -1,9 +1,17 @@
-use crate::server::shared::{
-    concepts::Concept,
-    entities::EntityDiscriminants,
-    types::{
-        Color, Icon,
-        metadata::{EntityMetadataProvider, HasId, TypeMetadataProvider},
+use std::collections::{BTreeMap, HashMap};
+
+use crate::server::{
+    hosts::r#impl::virtualization::HostVirtualizationState,
+    services::r#impl::categories::ServiceCategory,
+    shared::{
+        concepts::Concept,
+        entities::EntityDiscriminants,
+        types::{
+            Color, Icon,
+            metadata::{
+                EntityMetadataProvider, HasId, MetadataProvider, TypeMetadata, TypeMetadataProvider,
+            },
+        },
     },
 };
 use serde::{Deserialize, Serialize};
@@ -90,7 +98,7 @@ impl TopologyView {
 
 /// Defines the entity hierarchy for a topology view:
 /// container (grouping box) → element (rendered as nodes) → inline (shown inside nodes)
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ViewElementConfig {
     /// Entity rendered as the container/grouping box (e.g. Subnet in L3, Host in L2/Workloads)
     pub container_entity: Option<EntityDiscriminants>,
@@ -100,6 +108,13 @@ pub struct ViewElementConfig {
     /// Host elements inline services but Service elements inline nothing — can
     /// be expressed correctly.
     pub element_entities: Vec<ViewElementEntityConfig>,
+    /// Generic metadata filters keyed by the entity they apply to in this
+    /// view. Applied regardless of the entity's role (container/element/
+    /// inline) — a Service metadata filter renders under the Services
+    /// section whether Service is an element entity (Workloads/Application)
+    /// or an inline entity (L3).
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub metadata_filters: HashMap<EntityDiscriminants, Vec<MetadataFilter>>,
     /// Single noun spanning all element entities. Used in summaries when the
     /// per-entity breakdown would be confusing (e.g. mixed Host+Service in
     /// Workloads, where everything is conceptually a "workload"). Singular;
@@ -116,6 +131,98 @@ pub struct ViewElementConfig {
 pub struct ViewElementEntityConfig {
     pub entity_type: EntityDiscriminants,
     pub inline_entities: Vec<EntityDiscriminants>,
+}
+
+// ---------------------------------------------------------------------------
+// MetadataFilter — declared per (view, element entity) on the backend; drives
+// both the filter-panel chip UI and the hide-set stored in request options.
+// ---------------------------------------------------------------------------
+
+/// The kind of metadata filter. One variant per conceptually-distinct filter
+/// across the app — Category (on Service), Virtualization (on Host), and so
+/// on. Kept narrow on purpose: adding a new filter means adding a variant
+/// here + a `HasFilterValues` impl on the relevant entity.
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    Serialize,
+    Deserialize,
+    PartialEq,
+    Eq,
+    Hash,
+    Ord,
+    PartialOrd,
+    ToSchema,
+    EnumIter,
+    IntoStaticStr,
+)]
+pub enum MetadataFilterType {
+    Category,
+    Virtualization,
+}
+
+impl HasId for MetadataFilterType {
+    fn id(&self) -> &'static str {
+        self.into()
+    }
+}
+
+/// A declared metadata filter on an element entity inside a view.
+///
+/// `FilterValue::id` is the **stable identifier** — it's what each entity
+/// emits via `HasFilterValues`, what the hide-set in request options stores,
+/// and what matches entities on toggle. Changing an `id` silently clears
+/// users' persisted hide entries for that value; `label` is display-only
+/// and can change freely.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct MetadataFilter {
+    pub filter_type: MetadataFilterType,
+    /// User-facing sub-section label (e.g. "By Category", "By Virtualization").
+    pub label: String,
+    pub values: Vec<FilterValue>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct FilterValue {
+    pub id: String,
+    pub label: String,
+    pub color: Color,
+    #[schema(value_type = Option<String>, required)]
+    pub icon: Option<Icon>,
+}
+
+/// `TypeMetadata` → `FilterValue`. Any enum whose values already implement
+/// `TypeMetadataProvider` (ServiceCategory, HostVirtualizationState, etc.)
+/// gets a ready-made `FilterValue` for free via `.to_metadata().into()` —
+/// no hand-maintained parallel list.
+impl From<TypeMetadata> for FilterValue {
+    fn from(tm: TypeMetadata) -> Self {
+        FilterValue {
+            id: tm.id.to_string(),
+            label: tm.name.unwrap_or(tm.id).to_string(),
+            color: tm.color,
+            icon: tm.icon,
+        }
+    }
+}
+
+/// Enumerate a `TypeMetadataProvider` strum enum straight into `FilterValue`s.
+pub fn filter_values_from_enum<T>() -> Vec<FilterValue>
+where
+    T: TypeMetadataProvider + IntoEnumIterator,
+{
+    T::iter()
+        .map(|v| <T as MetadataProvider<TypeMetadata>>::to_metadata(&v).into())
+        .collect()
+}
+
+/// Entities that can surface metadata filter values. Returns the stable
+/// `FilterValue::id` (per `MetadataFilterType`) for each filter the entity
+/// participates in. Serialized alongside the entity so the frontend
+/// doesn't need any extractor logic.
+pub trait HasFilterValues {
+    fn filter_values(&self) -> BTreeMap<MetadataFilterType, String>;
 }
 
 // ---------------------------------------------------------------------------
@@ -254,8 +361,22 @@ impl TopologyView {
                 container_entity: Some(EntityDiscriminants::Subnet),
                 element_entities: vec![ViewElementEntityConfig {
                     entity_type: EntityDiscriminants::IPAddress,
-                    inline_entities: vec![EntityDiscriminants::Service, EntityDiscriminants::Port],
+                    // Port first so it surfaces above Service in the filter
+                    // panel (Service's category chips push it below the fold
+                    // otherwise). Card rendering reads this list as a set,
+                    // so order is irrelevant there.
+                    inline_entities: vec![EntityDiscriminants::Port, EntityDiscriminants::Service],
                 }],
+                metadata_filters: [(
+                    EntityDiscriminants::Service,
+                    vec![MetadataFilter {
+                        filter_type: MetadataFilterType::Category,
+                        label: "By category".to_string(),
+                        values: filter_values_from_enum::<ServiceCategory>(),
+                    }],
+                )]
+                .into_iter()
+                .collect(),
                 collective_noun: None,
             },
             Self::L2Physical => ViewElementConfig {
@@ -264,6 +385,7 @@ impl TopologyView {
                     entity_type: EntityDiscriminants::Interface,
                     inline_entities: vec![],
                 }],
+                metadata_filters: HashMap::new(),
                 collective_noun: None,
             },
             Self::Workloads => ViewElementConfig {
@@ -278,6 +400,26 @@ impl TopologyView {
                         inline_entities: vec![EntityDiscriminants::Service],
                     },
                 ],
+                metadata_filters: [
+                    (
+                        EntityDiscriminants::Service,
+                        vec![MetadataFilter {
+                            filter_type: MetadataFilterType::Category,
+                            label: "By category".to_string(),
+                            values: filter_values_from_enum::<ServiceCategory>(),
+                        }],
+                    ),
+                    (
+                        EntityDiscriminants::Host,
+                        vec![MetadataFilter {
+                            filter_type: MetadataFilterType::Virtualization,
+                            label: "By virtualization".to_string(),
+                            values: filter_values_from_enum::<HostVirtualizationState>(),
+                        }],
+                    ),
+                ]
+                .into_iter()
+                .collect(),
                 collective_noun: Some("workload".to_string()),
             },
             Self::Application => ViewElementConfig {
@@ -286,6 +428,16 @@ impl TopologyView {
                     entity_type: EntityDiscriminants::Service,
                     inline_entities: vec![],
                 }],
+                metadata_filters: [(
+                    EntityDiscriminants::Service,
+                    vec![MetadataFilter {
+                        filter_type: MetadataFilterType::Category,
+                        label: "By category".to_string(),
+                        values: filter_values_from_enum::<ServiceCategory>(),
+                    }],
+                )]
+                .into_iter()
+                .collect(),
                 collective_noun: None,
             },
         }

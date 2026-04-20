@@ -147,16 +147,18 @@ function defaultRequestOptions(): components['schemas']['TopologyRequestOptions'
 		}
 	}
 
-	// Hidden categories: OpenPorts for all views (use-case-aware filtering
-	// is handled by the ByServiceCategory element rule instead)
-	const hideServiceCategories: Record<string, ServiceCategory[]> = {};
+	// Default: OpenPorts hidden under Service.Category for every view
+	// (use-case-aware filtering is handled by the ByServiceCategory element
+	// rule; this is the chip-level toggle state). Shape matches the nested
+	// hide_metadata_values HashMap serialized by the backend.
+	const hideMetadataValues: Record<string, Record<string, Record<string, string[]>>> = {};
 	for (const p of ALL_VIEWS) {
-		hideServiceCategories[p] = ['OpenPorts'];
+		hideMetadataValues[p] = { Service: { Category: ['OpenPorts'] } };
 	}
 
 	return {
 		hide_entities: {},
-		hide_service_categories: hideServiceCategories,
+		hide_metadata_values: hideMetadataValues,
 		container_rules: containerRules,
 		element_rules: elementRules,
 		view: 'L3Logical'

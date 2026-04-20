@@ -162,15 +162,17 @@
 
 	// Update tag filter stores when topology or options change (always-mounted, unlike OptionsContent)
 	$effect(() => {
+		const hideMetadata = ($topologyOptions.request.hide_metadata_values ?? {}) as Record<
+			string,
+			Record<string, Record<string, string[]>>
+		>;
+		const hideEntities = ($topologyOptions.request.hide_entities ?? {}) as Record<string, string[]>;
 		updateTagFilter(
 			currentTopology ?? undefined,
 			$topologyOptions.local.tag_filter,
 			$activeView,
-			(($topologyOptions.request.hide_service_categories ?? {}) as Record<string, string[]>)[
-				$activeView
-			] ?? [],
-			(($topologyOptions.request.hide_entities ?? {}) as Record<string, string[]>)[$activeView] ??
-				[]
+			hideMetadata[$activeView],
+			hideEntities[$activeView] ?? []
 		);
 	});
 

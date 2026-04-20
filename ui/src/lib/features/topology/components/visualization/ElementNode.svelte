@@ -193,10 +193,15 @@
 			if (elementType === 'Host') {
 				if (!host || !resolved.hostId) return null;
 
+				// Hidden Service categories come from the generic metadata-filter
+				// hide-set: request.hide_metadata_values[view].Service.Category.
 				const hiddenCategories =
-					(($topologyOptions.request.hide_service_categories ?? {}) as Record<string, string[]>)[
-						$activeView
-					] ?? [];
+					(
+						($topologyOptions.request.hide_metadata_values ?? {}) as Record<
+							string,
+							Record<string, Record<string, string[]>>
+						>
+					)[$activeView]?.['Service']?.['Category'] ?? [];
 
 				type CategoryType = (typeof hiddenCategories)[number];
 				// Services visible in card: exclude OpenPorts hidden by category or tag
@@ -282,9 +287,12 @@
 			if (!host || !resolved.hostId) return null;
 
 			const hiddenCategories =
-				(($topologyOptions.request.hide_service_categories ?? {}) as Record<string, string[]>)[
-					$activeView
-				] ?? [];
+				(
+					($topologyOptions.request.hide_metadata_values ?? {}) as Record<
+						string,
+						Record<string, Record<string, string[]>>
+					>
+				)[$activeView]?.['Service']?.['Category'] ?? [];
 
 			// All services bound to this interface (after tag filtering)
 			const allServicesOnIPAddress = visibleServicesForHost

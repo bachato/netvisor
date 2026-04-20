@@ -233,7 +233,7 @@ async fn create_topology(
     let default_request = TopologyRequestOptions::default();
     topology.base.options.request.element_rules = default_request.element_rules;
     topology.base.options.request.container_rules = default_request.container_rules;
-    topology.base.options.request.hide_service_categories = default_request.hide_service_categories;
+    topology.base.options.request.hide_metadata_values = default_request.hide_metadata_values;
 
     let (hosts, ip_addresses, subnets, dependencies, ports, bindings, interfaces) =
         service.get_entity_data(topology.base.network_id).await?;

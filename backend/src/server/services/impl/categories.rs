@@ -1,10 +1,12 @@
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumDiscriminants, EnumIter, IntoStaticStr};
 use utoipa::ToSchema;
 
 use crate::server::{
     organizations::r#impl::base::UseCase,
+    services::r#impl::base::Service,
     shared::{
         concepts::Concept,
         entities::EntityDiscriminants,
@@ -13,6 +15,7 @@ use crate::server::{
             metadata::{EntityMetadataProvider, HasId, TypeMetadataProvider},
         },
     },
+    topology::types::views::{HasFilterValues, MetadataFilterType},
 };
 
 #[derive(
@@ -334,5 +337,17 @@ impl ServiceCategory {
             // Everything else: relevant for all use cases
             _ => UseCase::iter().collect(),
         }
+    }
+}
+
+impl HasFilterValues for Service {
+    fn filter_values(&self) -> BTreeMap<MetadataFilterType, String> {
+        use crate::server::services::r#impl::definitions::ServiceDefinition;
+        let mut values = BTreeMap::new();
+        // Disambiguate: Box<dyn ServiceDefinition> also impls TypeMetadataProvider
+        // which carries a separate `category() -> &str`.
+        let category = ServiceDefinition::category(&*self.base.service_definition);
+        values.insert(MetadataFilterType::Category, category.id().to_string());
+        values
     }
 }
