@@ -2943,7 +2943,7 @@ export interface components {
          * @description API metadata included in all responses
          * @example {
          *       "api_version": 1,
-         *       "server_version": "0.16.0"
+         *       "server_version": "0.16.1"
          *     }
          */
         ApiMeta: {
@@ -2954,7 +2954,7 @@ export interface components {
             api_version: number;
             /**
              * @description Server version (semver)
-             * @example 0.16.0
+             * @example 0.16.1
              */
             server_version: string;
         };
@@ -2968,14 +2968,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-18T19:09:30.033785Z",
-             *       "id": "9a6af0e2-cee3-4d01-8a62-773462d219e5",
+             *       "created_at": "2026-04-20T04:23:43.728453Z",
+             *       "id": "41f7b386-c0bc-447e-b8fe-da4111337732",
              *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-18T19:09:30.033785Z"
+             *       "updated_at": "2026-04-20T04:23:43.728453Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3262,14 +3262,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-18T19:09:30.010826Z",
-             *               "id": "e736c4ac-3b3d-4191-b2ad-03e7ca0dda95",
+             *               "created_at": "2026-04-20T04:23:43.711866Z",
+             *               "id": "dbcd3e5f-8f83-4d76-a762-44ef38e3c3ba",
              *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-18T19:09:30.010826Z"
+             *               "updated_at": "2026-04-20T04:23:43.711866Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3278,7 +3278,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "HP Printer",
+             *           "service_definition": "APC",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3542,14 +3542,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-18T19:09:30.027986Z",
-             *           "id": "1bfadc03-67f9-4287-a384-c2f24503581b",
+             *           "created_at": "2026-04-20T04:23:43.723772Z",
+             *           "id": "7a60015a-2114-4bef-bd4c-dbdfb7737b4e",
              *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-18T19:09:30.027986Z"
+             *           "updated_at": "2026-04-20T04:23:43.723772Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3558,7 +3558,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "HP Printer",
+             *       "service_definition": "APC",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3919,14 +3919,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-18T19:09:30.011347Z",
-         *       "id": "74290403-41df-4085-8445-0173412cdfe9",
+         *       "created_at": "2026-04-20T04:23:43.712189Z",
+         *       "id": "2907a66b-305c-480c-a08c-46046e98643f",
          *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-18T19:09:30.011347Z"
+         *       "updated_at": "2026-04-20T04:23:43.712189Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -4111,7 +4111,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "HP Printer",
+         *           "service_definition": "APC",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4288,6 +4288,16 @@ export interface components {
             network_id: string;
             /** @description Whether the daemon is on standby due to inactivity (no discovery in 30 days). */
             readonly standby?: boolean;
+            /**
+             * Format: date-time
+             * @description Timestamp of the most recent standby → active transition. Set by
+             *     `process_startup` when a restarted daemon is un-standby'd, and by
+             *     the discovery auto-wake path. The nightly inactivity check skips
+             *     daemons within the grace window (see `STANDBY_GRACE_PERIOD_DAYS`)
+             *     to prevent the "restart → cleared → re-standby'd before discovery
+             *     runs" race.
+             */
+            readonly standby_cleared_at?: string | null;
             tags: string[];
             readonly url: string;
             /**
@@ -4406,6 +4416,7 @@ export interface components {
         };
         /** @description Daemon version status including health and any warnings */
         DaemonVersionStatus: {
+            has_correct_docker_volume_mount?: boolean;
             status: components["schemas"]["VersionHealthStatus"];
             supports_unified_discovery?: boolean;
             version?: string | null;
@@ -4969,14 +4980,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-18T19:09:30.010098Z",
-         *               "id": "0fe29c3e-91a1-4f9d-9810-6474594831de",
+         *               "created_at": "2026-04-20T04:23:43.711419Z",
+         *               "id": "c6196ca7-bf5f-4c59-aa08-9251c12bc937",
          *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-18T19:09:30.010098Z"
+         *               "updated_at": "2026-04-20T04:23:43.711419Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -4985,7 +4996,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "HP Printer",
+         *           "service_definition": "APC",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -5623,7 +5634,7 @@ export interface components {
          *         "offset": 0,
          *         "total_count": 142
          *       },
-         *       "server_version": "0.16.0"
+         *       "server_version": "0.16.1"
          *     }
          */
         PaginatedApiMeta: {
@@ -5636,7 +5647,7 @@ export interface components {
             pagination: components["schemas"]["PaginationMeta"];
             /**
              * @description Server version (semver)
-             * @example 0.16.0
+             * @example 0.16.1
              */
             server_version: string;
         };
@@ -6149,14 +6160,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-18T19:09:30.011154Z",
-         *           "id": "1ae2eed3-45bc-456f-93b8-21bedc47f5fe",
+         *           "created_at": "2026-04-20T04:23:43.712081Z",
+         *           "id": "8e7faba1-f325-42db-a982-c7d70a90d0d7",
          *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-18T19:09:30.011154Z"
+         *           "updated_at": "2026-04-20T04:23:43.712081Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -6165,7 +6176,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "HP Printer",
+         *       "service_definition": "APC",
          *       "source": {
          *         "type": "Manual"
          *       },
@@ -6591,9 +6602,28 @@ export interface components {
                 [key: string]: components["schemas"]["IdentifiedRule_ContainerRule"][];
             };
             element_rules?: components["schemas"]["IdentifiedRule_ElementRule"][];
-            hide_ports: boolean;
-            hide_service_categories?: {
-                [key: string]: components["schemas"]["ServiceCategory"][];
+            /**
+             * @description Entity types hidden per view. Keyed by TopologyView, values are entity
+             *     types (matching those declared as container/element/inline in the
+             *     view's element_config). Hides every manifestation of the entity in
+             *     that view — element nodes, container nodes, and inline rows on
+             *     element cards. Supersedes the old `hide_ports` (L3-only, inline-only).
+             */
+            hide_entities?: {
+                [key: string]: components["schemas"]["EntityDiscriminants"][];
+            };
+            /**
+             * @description Generic per-(view, entity, filter) hide-set for metadata filters
+             *     (Category, Virtualization, etc). Supersedes the old
+             *     `hide_service_categories`; nested so JSON keys are strings all the
+             *     way down.
+             */
+            hide_metadata_values?: {
+                [key: string]: {
+                    [key: string]: {
+                        [key: string]: string[];
+                    };
+                };
             };
             view?: components["schemas"]["TopologyView"];
         };

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Scanopy API",
-    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Pagination\n\nList endpoints support pagination via query parameters:\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `limit` | integer | 50 | Maximum results to return (1-1000). Use 0 for no limit. |\n| `offset` | integer | 0 | Number of results to skip |\n\nExample: `GET /api/v1/hosts?limit=10&offset=20`\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.16.0\"\n  }\n}\n```\n\n**Paginated list responses** include pagination metadata:\n\n```json\n{\n  \"success\": true,\n  \"data\": [ ... ],\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.16.0\",\n    \"pagination\": {\n      \"total_count\": 142,\n      \"limit\": 50,\n      \"offset\": 0,\n      \"has_more\": true\n    }\n  }\n}\n```\n\n| Field | Description |\n|-------|-------------|\n| `total_count` | Total items matching your query (ignoring pagination) |\n| `limit` | Applied limit (your request or default) |\n| `offset` | Applied offset |\n| `has_more` | `true` if more results exist beyond this page |\n\n**Error responses** include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nEndpoints are prefixed with `/api/v1/`. The API version is an integer (`api_version: 1`) returned in every response, versioned independently from the application. Check `GET /api/version` for current versions.\n\n**While Scanopy is pre-v1.0 (current: 0.16.0)**, the API should be considered unstable. Breaking changes may be introduced in any release without incrementing the API version. We recommend pinning to a specific Scanopy release if you depend on API stability, and reviewing the [changelog](/changelog) before upgrading. After Scanopy reaches v1.0, breaking API changes will only occur with an API version increment.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
+    "description": "\nNetwork topology discovery and visualization API.\n\n## Authentication\n\nTwo authentication methods are supported:\n\n| Method | Header | Use Case |\n|--------|--------|----------|\n| User API key | `Authorization: Bearer scp_u_...` | Programmatic access, integrations |\n| Session cookie | `Cookie: session_id=...` | Web UI (via `/api/auth/login`) |\n\nUser API keys require your organization to have API access enabled. Create keys at **Platform > API Keys**.\n\n## Rate Limiting\n\nLimit: 300 requests/minute\n\nBurst: 150\n\nResponse headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`\n\nWhen rate limited, you'll receive HTTP `429 Too Many Requests` with a `Retry-After` header.\n\n## Pagination\n\nList endpoints support pagination via query parameters:\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `limit` | integer | 50 | Maximum results to return (1-1000). Use 0 for no limit. |\n| `offset` | integer | 0 | Number of results to skip |\n\nExample: `GET /api/v1/hosts?limit=10&offset=20`\n\n## Response Format\n\nAll responses use a standard envelope:\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.16.1\"\n  }\n}\n```\n\n**Paginated list responses** include pagination metadata:\n\n```json\n{\n  \"success\": true,\n  \"data\": [ ... ],\n  \"meta\": {\n    \"api_version\": 1,\n    \"server_version\": \"0.16.1\",\n    \"pagination\": {\n      \"total_count\": 142,\n      \"limit\": 50,\n      \"offset\": 0,\n      \"has_more\": true\n    }\n  }\n}\n```\n\n| Field | Description |\n|-------|-------------|\n| `total_count` | Total items matching your query (ignoring pagination) |\n| `limit` | Applied limit (your request or default) |\n| `offset` | Applied offset |\n| `has_more` | `true` if more results exist beyond this page |\n\n**Error responses** include an `error` field instead of `data`:\n\n```json\n{\n  \"success\": false,\n  \"error\": \"Resource not found\",\n  \"meta\": { ... }\n}\n```\n\n**Common status codes:** `400` validation error, `401` unauthorized, `403` forbidden, `404` not found, `409` conflict, `429` rate limited.\n\n## Versioning\n\nEndpoints are prefixed with `/api/v1/`. The API version is an integer (`api_version: 1`) returned in every response, versioned independently from the application. Check `GET /api/version` for current versions.\n\n**While Scanopy is pre-v1.0 (current: 0.16.1)**, the API should be considered unstable. Breaking changes may be introduced in any release without incrementing the API version. We recommend pinning to a specific Scanopy release if you depend on API stability, and reviewing the [changelog](/changelog) before upgrading. After Scanopy reaches v1.0, breaking API changes will only occur with an API version increment.\n\n## Multi-Tenancy\n\nResources are scoped to your **organization** and **network(s)**:\n\n- You can only access entities within your organization\n- Network-level entities (hosts, services, etc.) are filtered to networks you have access to\n- Use `?network_id=<UUID>` to filter list endpoints to a specific network\n- API keys can be scoped to a subset of your accessible networks\n",
     "license": {
       "name": "Dual (AGPL3.0, Commercial License Available)"
     },
@@ -13037,12 +13037,12 @@
           "server_version": {
             "type": "string",
             "description": "Server version (semver)",
-            "example": "0.16.0"
+            "example": "0.16.1"
           }
         },
         "example": {
           "api_version": 1,
-          "server_version": "0.16.0"
+          "server_version": "0.16.1"
         }
       },
       "ApiResponse": {
@@ -13116,14 +13116,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-18T19:09:30.033785Z",
-              "id": "9a6af0e2-cee3-4d01-8a62-773462d219e5",
+              "created_at": "2026-04-20T04:23:43.728453Z",
+              "id": "41f7b386-c0bc-447e-b8fe-da4111337732",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-18T19:09:30.033785Z"
+              "updated_at": "2026-04-20T04:23:43.728453Z"
             }
           },
           "error": {
@@ -14022,14 +14022,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-18T19:09:30.010826Z",
-                      "id": "e736c4ac-3b3d-4191-b2ad-03e7ca0dda95",
+                      "created_at": "2026-04-20T04:23:43.711866Z",
+                      "id": "dbcd3e5f-8f83-4d76-a762-44ef38e3c3ba",
                       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-18T19:09:30.010826Z"
+                      "updated_at": "2026-04-20T04:23:43.711866Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -14038,7 +14038,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "HP Printer",
+                  "service_definition": "APC",
                   "source": {
                     "type": "Manual"
                   },
@@ -14761,14 +14761,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-18T19:09:30.027986Z",
-                  "id": "1bfadc03-67f9-4287-a384-c2f24503581b",
+                  "created_at": "2026-04-20T04:23:43.723772Z",
+                  "id": "7a60015a-2114-4bef-bd4c-dbdfb7737b4e",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-18T19:09:30.027986Z"
+                  "updated_at": "2026-04-20T04:23:43.723772Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -14777,7 +14777,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "HP Printer",
+              "service_definition": "APC",
               "source": {
                 "type": "Manual"
               },
@@ -16156,14 +16156,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-18T19:09:30.011347Z",
-          "id": "74290403-41df-4085-8445-0173412cdfe9",
+          "created_at": "2026-04-20T04:23:43.712189Z",
+          "id": "2907a66b-305c-480c-a08c-46046e98643f",
           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-18T19:09:30.011347Z"
+          "updated_at": "2026-04-20T04:23:43.712189Z"
         }
       },
       "BindingBase": {
@@ -16693,7 +16693,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "HP Printer",
+              "service_definition": "APC",
               "tags": [],
               "virtualization": null
             }
@@ -17182,6 +17182,15 @@
             "description": "Whether the daemon is on standby due to inactivity (no discovery in 30 days).",
             "readOnly": true
           },
+          "standby_cleared_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Timestamp of the most recent standby → active transition. Set by\n`process_startup` when a restarted daemon is un-standby'd, and by\nthe discovery auto-wake path. The nightly inactivity check skips\ndaemons within the grace window (see `STANDBY_GRACE_PERIOD_DAYS`)\nto prevent the \"restart → cleared → re-standby'd before discovery\nruns\" race.",
+            "readOnly": true
+          },
           "tags": {
             "type": "array",
             "items": {
@@ -17454,6 +17463,9 @@
           "status"
         ],
         "properties": {
+          "has_correct_docker_volume_mount": {
+            "type": "boolean"
+          },
           "status": {
             "$ref": "#/components/schemas/VersionHealthStatus"
           },
@@ -19205,14 +19217,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-18T19:09:30.010098Z",
-                  "id": "0fe29c3e-91a1-4f9d-9810-6474594831de",
+                  "created_at": "2026-04-20T04:23:43.711419Z",
+                  "id": "c6196ca7-bf5f-4c59-aa08-9251c12bc937",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-18T19:09:30.010098Z"
+                  "updated_at": "2026-04-20T04:23:43.711419Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -19221,7 +19233,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "HP Printer",
+              "service_definition": "APC",
               "source": {
                 "type": "Manual"
               },
@@ -21018,7 +21030,7 @@
           "server_version": {
             "type": "string",
             "description": "Server version (semver)",
-            "example": "0.16.0"
+            "example": "0.16.1"
           }
         },
         "example": {
@@ -21029,7 +21041,7 @@
             "offset": 0,
             "total_count": 142
           },
-          "server_version": "0.16.0"
+          "server_version": "0.16.1"
         }
       },
       "PaginatedApiResponse_Credential": {
@@ -21448,14 +21460,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-18T19:09:29.996467Z",
-                        "id": "cbcb5ba5-d2cb-45d1-ace1-7e9935717491",
+                        "created_at": "2026-04-20T04:23:43.700530Z",
+                        "id": "e6e9d17d-9af0-438d-8620-42dad133595b",
                         "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-18T19:09:29.996467Z"
+                        "updated_at": "2026-04-20T04:23:43.700530Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -21464,7 +21476,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "HP Printer",
+                    "service_definition": "APC",
                     "source": {
                       "type": "Manual"
                     },
@@ -21541,14 +21553,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-18T19:09:30.026352Z",
-                    "id": "44e60fd8-b01f-4745-98f5-99bd65905a3b",
+                    "created_at": "2026-04-20T04:23:43.722486Z",
+                    "id": "ed137dab-0150-4707-a961-d9d482598102",
                     "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-18T19:09:30.026352Z"
+                    "updated_at": "2026-04-20T04:23:43.722486Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -21557,7 +21569,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "HP Printer",
+                "service_definition": "APC",
                 "source": {
                   "type": "Manual"
                 },
@@ -22795,14 +22807,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-18T19:09:30.011154Z",
-              "id": "1ae2eed3-45bc-456f-93b8-21bedc47f5fe",
+              "created_at": "2026-04-20T04:23:43.712081Z",
+              "id": "8e7faba1-f325-42db-a982-c7d70a90d0d7",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-18T19:09:30.011154Z"
+              "updated_at": "2026-04-20T04:23:43.712081Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -22811,7 +22823,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "HP Printer",
+          "service_definition": "APC",
           "source": {
             "type": "Manual"
           },
@@ -23946,9 +23958,6 @@
       },
       "TopologyRequestOptions": {
         "type": "object",
-        "required": [
-          "hide_ports"
-        ],
         "properties": {
           "container_rules": {
             "type": "object",
@@ -23975,15 +23984,74 @@
               "$ref": "#/components/schemas/IdentifiedRule_ElementRule"
             }
           },
-          "hide_ports": {
-            "type": "boolean"
-          },
-          "hide_service_categories": {
+          "hide_entities": {
             "type": "object",
+            "description": "Entity types hidden per view. Keyed by TopologyView, values are entity\ntypes (matching those declared as container/element/inline in the\nview's element_config). Hides every manifestation of the entity in\nthat view — element nodes, container nodes, and inline rows on\nelement cards. Supersedes the old `hide_ports` (L3-only, inline-only).",
             "additionalProperties": {
               "type": "array",
               "items": {
-                "$ref": "#/components/schemas/ServiceCategory"
+                "$ref": "#/components/schemas/EntityDiscriminants"
+              }
+            },
+            "propertyNames": {
+              "type": "string",
+              "description": "Which topology view is being rendered",
+              "enum": [
+                "L2Physical",
+                "L3Logical",
+                "Workloads",
+                "Application"
+              ]
+            }
+          },
+          "hide_metadata_values": {
+            "type": "object",
+            "description": "Generic per-(view, entity, filter) hide-set for metadata filters\n(Category, Virtualization, etc). Supersedes the old\n`hide_service_categories`; nested so JSON keys are strings all the\nway down.",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "propertyNames": {
+                  "type": "string",
+                  "description": "The kind of metadata filter. One variant per conceptually-distinct filter\nacross the app — Category (on Service), Virtualization (on Host), and so\non. Kept narrow on purpose: adding a new filter means adding a variant\nhere + a `HasFilterValues` impl on the relevant entity.",
+                  "enum": [
+                    "Category",
+                    "Virtualization"
+                  ]
+                }
+              },
+              "propertyNames": {
+                "type": "string",
+                "enum": [
+                  "Organization",
+                  "Invite",
+                  "Share",
+                  "Network",
+                  "DaemonApiKey",
+                  "UserApiKey",
+                  "User",
+                  "Tag",
+                  "Discovery",
+                  "Daemon",
+                  "Host",
+                  "Service",
+                  "Port",
+                  "Binding",
+                  "IPAddress",
+                  "Interface",
+                  "Credential",
+                  "Subnet",
+                  "Vlan",
+                  "Dependency",
+                  "Topology",
+                  "Unknown"
+                ]
               }
             },
             "propertyNames": {
