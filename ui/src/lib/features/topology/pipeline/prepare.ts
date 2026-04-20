@@ -14,6 +14,7 @@ import {
 import { elevateEdgesToContainers } from '../layout/edge-elevation';
 import { containerTypes, views } from '$lib/shared/stores/metadata';
 import { activeView, topologyOptions } from '../queries';
+import { tagHiddenNodeIds } from '../interactions';
 import { buildTopologyParentIndex } from '../topology-parent-index';
 
 /**
@@ -79,25 +80,15 @@ function getInlineContentKey(topo: Topology, view: string): string {
 // stepExpand to 4) is respected on later navigations.
 let defaultsAppliedThisSession = false;
 
-/** Signature of the user's inline hide state for this view. Changing a
- *  toggle flips this value → topologyChanged → measure + ELK re-run, so
- *  cards whose content expands/collapses don't overlap their neighbours. */
-function getHideStateKey(view: string): string {
-	const opts = get(topologyOptions);
-	const request = opts.request as unknown as {
-		hide_entities?: Record<string, string[]>;
-		hide_metadata_values?: Record<string, Record<string, Record<string, string[]>>>;
-	};
-	const hiddenEntities = [...(request.hide_entities?.[view] ?? [])].sort().join(',');
-	const hiddenMeta = request.hide_metadata_values?.[view] ?? {};
-	const metaEntries: string[] = [];
-	for (const entityType of Object.keys(hiddenMeta).sort()) {
-		for (const filterType of Object.keys(hiddenMeta[entityType]).sort()) {
-			const vals = [...(hiddenMeta[entityType][filterType] ?? [])].sort().join(',');
-			metaEntries.push(`${entityType}.${filterType}=[${vals}]`);
-		}
-	}
-	return `E[${hiddenEntities}];M[${metaEntries.join(';')}]`;
+/** Signature of the currently filtered-out set. Since the pipeline now
+ *  removes these nodes structurally (not just fades), any change here must
+ *  trigger a full re-run so ELK sees the new node/edge set. Hashes the
+ *  resolved hidden-node set directly — which already reflects tag filters,
+ *  category/metadata filters, and entity-hide via updateTagFilter. */
+function getHideStateKey(): string {
+	const hidden = get(tagHiddenNodeIds);
+	if (hidden.size === 0) return '';
+	return [...hidden].sort().join(',');
 }
 
 function getStructureKey(topo: Topology, view: string): string {
@@ -109,7 +100,7 @@ function getStructureKey(topo: Topology, view: string): string {
 		.sort()
 		.join(',');
 	const inlineKey = getInlineContentKey(topo, view);
-	const hideKey = getHideStateKey(view);
+	const hideKey = getHideStateKey();
 	return `${topo.nodes.length}:${topo.edges.length}:${nodeKeys}|${inlineKey}|${hideKey}`;
 }
 
@@ -259,8 +250,15 @@ export function prepareTopologyData(
 	}
 	state.lastSeenTopologyId = topologyId;
 
-	// All nodes participate in layout
-	let layoutNodes = topology.nodes;
+	// Filter out nodes hidden by any filter source (tag, category/metadata,
+	// entity-hide). Filter = structural remove, uniformly across sources —
+	// the node is absent from ELK input, DOM, and edge graph. Fade is now
+	// reserved for focus operations (search, selection).
+	const hiddenByFilter = get(tagHiddenNodeIds);
+	let layoutNodes =
+		hiddenByFilter.size > 0
+			? topology.nodes.filter((n) => !hiddenByFilter.has(n.id))
+			: topology.nodes;
 
 	// Remove subcontainers with no remaining element children
 	const subcontainerIds = new Set(
@@ -299,8 +297,16 @@ export function prepareTopologyData(
 	const parentIndex = buildTopologyParentIndex(topology.nodes);
 	const hiddenEdgeTypes = get(topologyOptions).local.hide_edge_types ?? [];
 
-	// Elevate edges targeting elements inside absorbing containers
-	const elevatedEdges = elevateEdgesToContainers(topology.edges, layoutNodes);
+	// Elevate edges targeting elements inside absorbing containers.
+	// Then drop edges whose endpoints were filtered out so ELK doesn't
+	// see orphaned references and the renderer doesn't draw ghost lines.
+	const elevatedEdgesRaw = elevateEdgesToContainers(topology.edges, layoutNodes);
+	const elevatedEdges =
+		hiddenByFilter.size > 0
+			? elevatedEdgesRaw.filter(
+					(e) => !hiddenByFilter.has(e.source) && !hiddenByFilter.has(e.target)
+				)
+			: elevatedEdgesRaw;
 
 	// Map containers to themselves for bundling
 	for (const node of layoutNodes) {

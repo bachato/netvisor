@@ -33,9 +33,11 @@
 		topology_showMinimapHelp,
 		common_byTag,
 		common_edges,
+		common_clearAll,
 		topology_filtersApplyToView,
 		topology_groupsHelp,
-		topology_displayHelp
+		topology_displayHelp,
+		topology_nFiltersApplied
 	} from '$lib/paraglide/messages';
 
 	type EntityType = components['schemas']['EntityDiscriminants'];
@@ -198,6 +200,131 @@
 		if (entityType === 'Service') return f?.hidden_service_tag_ids ?? [];
 		if (entityType === 'Subnet') return f?.hidden_subnet_tag_ids ?? [];
 		return [];
+	}
+
+	// OpenPorts under Service.Category is a product-level default, not a
+	// user filter — it shouldn't count toward the "filters applied" badge,
+	// and Clear-all preserves it.
+	function isDefaultMetadataValue(
+		entityType: string,
+		filterType: string,
+		valueId: string
+	): boolean {
+		return entityType === 'Service' && filterType === 'Category' && valueId === 'OpenPorts';
+	}
+
+	function countUserMetadataValues(entityType: EntityType): number {
+		const perFilter = hiddenMetadataForView[entityType] ?? {};
+		let count = 0;
+		for (const filterType of Object.keys(perFilter)) {
+			for (const v of perFilter[filterType]) {
+				if (!isDefaultMetadataValue(entityType, filterType, v)) count++;
+			}
+		}
+		return count;
+	}
+
+	function userFilterCountFor(entityType: EntityType): number {
+		return (
+			hiddenTagIdsForEntity(entityType).length +
+			countUserMetadataValues(entityType) +
+			(hiddenEntitiesThisView.includes(entityType) ? 1 : 0)
+		);
+	}
+
+	let userFilterTotal = $derived(
+		filterSections.reduce((sum, s) => sum + userFilterCountFor(s.entityType), 0)
+	);
+
+	function clearFiltersForEntity(entityType: EntityType) {
+		const view = $activeView;
+		updateTopologyOptions((opts) => {
+			const tf = opts.local.tag_filter ?? {
+				hidden_host_tag_ids: [],
+				hidden_service_tag_ids: [],
+				hidden_subnet_tag_ids: []
+			};
+			const newTf = { ...tf };
+			if (entityType === 'Host') newTf.hidden_host_tag_ids = [];
+			if (entityType === 'Service') newTf.hidden_service_tag_ids = [];
+			if (entityType === 'Subnet') newTf.hidden_subnet_tag_ids = [];
+
+			const hideEntities = {
+				...((opts.request.hide_entities ?? {}) as Record<string, EntityType[]>)
+			};
+			if (hideEntities[view]) {
+				hideEntities[view] = hideEntities[view].filter((e) => e !== entityType);
+				if (hideEntities[view].length === 0) delete hideEntities[view];
+			}
+
+			const hideMeta = {
+				...((opts.request.hide_metadata_values ?? {}) as Record<
+					string,
+					Record<string, Record<string, string[]>>
+				>)
+			};
+			if (hideMeta[view]) {
+				const byEntity = { ...hideMeta[view] };
+				if (entityType === 'Service') {
+					const preservedCategory = byEntity.Service?.Category?.includes('OpenPorts')
+						? { Category: ['OpenPorts'] }
+						: undefined;
+					if (preservedCategory) byEntity.Service = preservedCategory;
+					else delete byEntity.Service;
+				} else {
+					delete byEntity[entityType];
+				}
+				if (Object.keys(byEntity).length === 0) delete hideMeta[view];
+				else hideMeta[view] = byEntity;
+			}
+
+			return {
+				...opts,
+				local: { ...opts.local, tag_filter: newTf },
+				request: {
+					...opts.request,
+					hide_entities: hideEntities,
+					hide_metadata_values: hideMeta
+				}
+			};
+		});
+	}
+
+	function clearAllFiltersForView() {
+		const view = $activeView;
+		updateTopologyOptions((opts) => {
+			const hideEntities = {
+				...((opts.request.hide_entities ?? {}) as Record<string, EntityType[]>)
+			};
+			delete hideEntities[view];
+
+			const hideMeta = {
+				...((opts.request.hide_metadata_values ?? {}) as Record<
+					string,
+					Record<string, Record<string, string[]>>
+				>)
+			};
+			const openPortsHidden = hideMeta[view]?.Service?.Category?.includes('OpenPorts') ?? false;
+			if (openPortsHidden) hideMeta[view] = { Service: { Category: ['OpenPorts'] } };
+			else delete hideMeta[view];
+
+			return {
+				...opts,
+				local: {
+					...opts.local,
+					tag_filter: {
+						hidden_host_tag_ids: [],
+						hidden_service_tag_ids: [],
+						hidden_subnet_tag_ids: []
+					}
+				},
+				request: {
+					...opts.request,
+					hide_entities: hideEntities,
+					hide_metadata_values: hideMeta
+				}
+			};
+		});
 	}
 
 	function toggleHiddenEntity(entityType: EntityType) {
@@ -499,6 +626,21 @@
 			{topology_filtersApplyToView({ viewName: viewMeta?.name ?? $activeView })}
 		</p>
 
+		{#if userFilterTotal > 0}
+			<div class="bg-surface-secondary flex items-center justify-between rounded px-2 py-1.5">
+				<span class="text-secondary text-xs font-medium">
+					{topology_nFiltersApplied({ count: userFilterTotal })}
+				</span>
+				<button
+					type="button"
+					class="text-tertiary hover:text-primary text-xs underline"
+					onclick={clearAllFiltersForView}
+				>
+					{common_clearAll()}
+				</button>
+			</div>
+		{/if}
+
 		<div class="space-y-1.5">
 			<div class="text-secondary text-xs font-semibold uppercase tracking-wide">
 				{common_edges()}
@@ -519,6 +661,7 @@
 			{@const hasTagBody = !!tagBundle && (tagBundle.tags.length > 0 || tagBundle.hasUntagged)}
 			{@const hasContent = hasTagBody || metadataFilters.length > 0 || section.togglePresent}
 			{#if hasContent}
+				{@const sectionFilterCount = userFilterCountFor(section.entityType)}
 				<div class="filter-section space-y-1.5 border-t border-gray-300 pt-2 dark:border-gray-700">
 					<EntityFilterHeader
 						entityType={section.entityType}
@@ -526,7 +669,9 @@
 						togglePresent={section.togglePresent}
 						toggleDisabled={section.toggleDisabled}
 						hidden={section.hidden}
+						activeFilterCount={sectionFilterCount}
 						onToggle={toggleHiddenEntity}
+						onClearSection={clearFiltersForEntity}
 					/>
 					{#if !section.hidden}
 						{#if hasTagBody && tagBundle}

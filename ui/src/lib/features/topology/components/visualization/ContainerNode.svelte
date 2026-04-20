@@ -29,7 +29,6 @@
 	import {
 		connectedNodeIds,
 		isExporting,
-		tagHiddenNodeIds,
 		searchHiddenNodeIds,
 		searchMatchContainerMap,
 		hoveredTag,
@@ -51,12 +50,6 @@
 	let isExportingValue = $state(get(isExporting));
 	isExporting.subscribe((value) => {
 		isExportingValue = value;
-	});
-
-	// Subscribe to tag filter store for reactivity
-	let hiddenNodes = $state(get(tagHiddenNodeIds));
-	tagHiddenNodeIds.subscribe((value) => {
-		hiddenNodes = value;
 	});
 
 	// Subscribe to search filter store for reactivity
@@ -109,10 +102,10 @@
 		hasSearchMatches ? 'box-shadow: 0 0 0 2px rgb(59 130 246);' : ''
 	);
 
-	// Fade out when another node is selected or hidden by tag/search filter
+	// Fade signals "focus elsewhere" (search, selection) — not filter state.
+	// Filter hides remove containers structurally upstream of this component.
 	let shouldFadeOut = $derived.by(() => {
 		if (isExportingValue) return false;
-		if (hiddenNodes.has(id)) return true;
 		if (searchHiddenNodes.has(id) && !hasSearchMatches) return true;
 		if (!selectedNode && !selectedEdge) return false;
 		return !connectedNodes.has(id);

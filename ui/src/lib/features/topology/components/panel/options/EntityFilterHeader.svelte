@@ -1,12 +1,13 @@
 <script lang="ts">
 	import type { components } from '$lib/api/schema';
-	import { Eye, EyeOff } from 'lucide-svelte';
+	import { Eye, EyeOff, X } from 'lucide-svelte';
 	import { entities } from '$lib/shared/stores/metadata';
 	import { hoveredTag } from '../../../interactions';
 	import {
 		topology_hideEntity,
 		topology_showEntity,
-		topology_hideLastElementDisabled
+		topology_hideLastElementDisabled,
+		topology_clearSectionFilters
 	} from '$lib/paraglide/messages';
 
 	type EntityType = components['schemas']['EntityDiscriminants'];
@@ -17,14 +18,18 @@
 		togglePresent,
 		toggleDisabled,
 		hidden,
-		onToggle
+		activeFilterCount = 0,
+		onToggle,
+		onClearSection
 	}: {
 		entityType: EntityType;
 		hoverable: boolean;
 		togglePresent: boolean;
 		toggleDisabled: boolean;
 		hidden: boolean;
+		activeFilterCount?: number;
 		onToggle: (entityType: EntityType) => void;
+		onClearSection?: (entityType: EntityType) => void;
 	} = $props();
 
 	let label = $derived(entities.getMetadata(entityType)?.entity_name_plural ?? entityType);
@@ -53,6 +58,17 @@
 		<span class="text-secondary text-xs font-semibold uppercase tracking-wide">
 			{label}
 		</span>
+		{#if activeFilterCount > 0 && onClearSection}
+			<button
+				type="button"
+				class="text-tertiary hover:text-primary bg-surface-secondary flex items-center gap-0.5 rounded px-1 py-0.5 text-xs transition-colors"
+				title={topology_clearSectionFilters({ entity: label })}
+				onclick={() => onClearSection(entityType)}
+			>
+				<X class="h-3 w-3" />
+				{activeFilterCount}
+			</button>
+		{/if}
 		{#if togglePresent}
 			<button
 				type="button"

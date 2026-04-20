@@ -354,6 +354,12 @@
 	hideEdgeTypesStore.subscribe(() => {
 		if (storesInitialized) triggerLoad();
 	});
+	// Filter changes (tag / metadata / entity-hide all funnel through here)
+	// must re-run the pipeline so ELK sees the new node set and containers
+	// reflow around the removed cards.
+	tagHiddenNodeIds.subscribe(() => {
+		if (storesInitialized) triggerLoad();
+	});
 	storesInitialized = true;
 
 	$effect(() => {

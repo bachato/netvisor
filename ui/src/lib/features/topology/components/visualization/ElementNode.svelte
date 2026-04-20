@@ -18,7 +18,6 @@
 		connectedNodeIds,
 		isExporting,
 		newNodeIds,
-		tagHiddenNodeIds,
 		tagHiddenServiceIds,
 		searchHiddenNodeIds,
 		hoveredTag,
@@ -42,11 +41,6 @@
 	});
 
 	// Subscribe to tag filter stores for reactivity
-	let hiddenNodes = $state(get(tagHiddenNodeIds));
-	tagHiddenNodeIds.subscribe((value) => {
-		hiddenNodes = value;
-	});
-
 	let hiddenServices = $state(get(tagHiddenServiceIds));
 	tagHiddenServiceIds.subscribe((value) => {
 		hiddenServices = value;
@@ -204,23 +198,24 @@
 					)[$activeView]?.['Service']?.['Category'] ?? [];
 
 				type CategoryType = (typeof hiddenCategories)[number];
-				// Services visible in card: exclude OpenPorts hidden by category or tag
-				// (non-OpenPorts stay and render faded when hidden)
+				// Services visible in card. Filter = structural remove: hidden
+				// services are dropped from the list entirely, not faded. The
+				// OpenPorts-category subset is routed to the collapsed
+				// "+N open ports" indicator below (expand-to-see UX).
 				const servicesOnHost = visibleServicesForHost.filter((s) => {
+					if (hiddenServices.has(s.id)) return false;
 					const category = serviceDefinitions.getCategory(s.service_definition);
-					if (
-						category === 'OpenPorts' &&
-						(hiddenCategories.includes(category as CategoryType) || hiddenServices.has(s.id))
-					)
+					if (category === 'OpenPorts' && hiddenCategories.includes(category as CategoryType))
 						return false;
 					return true;
 				});
 
-				// OpenPorts hidden by category OR tag → collapsed indicator
+				// OpenPorts hidden by category → collapsed indicator.
+				// (Tag-hidden services of any category are already removed above.)
 				const hiddenOpenPorts = visibleServicesForHost.filter((s) => {
+					if (hiddenServices.has(s.id)) return false;
 					const category = serviceDefinitions.getCategory(s.service_definition);
-					if (category !== 'OpenPorts') return false;
-					return hiddenCategories.includes(category as CategoryType) || hiddenServices.has(s.id);
+					return category === 'OpenPorts' && hiddenCategories.includes(category as CategoryType);
 				});
 
 				// Service names and port lines hide independently. Render the
@@ -306,24 +301,20 @@
 					)
 				: [];
 
-			// Split into visible services and hidden open ports
-			// OpenPorts hidden by category or tag go to collapsed indicator
-			// Non-OpenPorts stay and render faded when hidden
+			// Filter = structural remove (see Host branch for context).
 			type CategoryType = (typeof hiddenCategories)[number];
 			const servicesOnIPAddress = allServicesOnIPAddress.filter((s) => {
+				if (hiddenServices.has(s.id)) return false;
 				const category = serviceDefinitions.getCategory(s.service_definition);
-				if (
-					category === 'OpenPorts' &&
-					(hiddenCategories.includes(category as CategoryType) || hiddenServices.has(s.id))
-				)
+				if (category === 'OpenPorts' && hiddenCategories.includes(category as CategoryType))
 					return false;
 				return true;
 			});
 
 			const hiddenOpenPorts = allServicesOnIPAddress.filter((s) => {
+				if (hiddenServices.has(s.id)) return false;
 				const category = serviceDefinitions.getCategory(s.service_definition);
-				if (category !== 'OpenPorts') return false;
-				return hiddenCategories.includes(category as CategoryType) || hiddenServices.has(s.id);
+				return category === 'OpenPorts' && hiddenCategories.includes(category as CategoryType);
 			});
 
 			let bodyText: string | null = null;
@@ -439,30 +430,20 @@
 			multiSelectedNodes.some((n) => n.id === nodeRenderData?.ip_address_id)
 	);
 
-	// Calculate if this node should fade out when another node is selected or hidden by tag filter
+	// Fade signals "focus elsewhere" (search, selection) — not filter state.
+	// Filter hides (tag / metadata / entity-hide) remove nodes structurally
+	// upstream of this component, so a rendered card is never filter-hidden.
 	let shouldFadeOut = $derived.by(() => {
 		if (isExportingValue) return false;
 
-		// Tag filter: fade if this node is hidden
-		if (hiddenNodes.has(id)) {
-			return true;
-		}
-
-		// Service/category filter: fade if this service element is hidden
-		if (hiddenServices.has(id) || nodeRenderData?.isCategoryHidden) {
-			return true;
-		}
-
-		// Search filter: fade if this node is hidden by search
+		// Search highlight: fade non-matching nodes.
 		if (searchHiddenNodes.has(id)) {
 			return true;
 		}
 
-		// Selection-based fading
+		// Selection focus: fade unconnected nodes.
 		if (!selectedNode && !selectedEdge && multiSelectedNodes.length < 2) return false;
 		if (!nodeRenderData) return false;
-
-		// Check if this node is in the connected set
 		return !connectedNodes.has(id);
 	});
 
@@ -650,11 +631,6 @@
 		<div class="flex flex-1 flex-col items-center justify-center px-3 py-2">
 			{#if nodeRenderData.showServices}
 				{#snippet serviceCard(service: (typeof nodeRenderData.services)[number])}
-					{@const isServiceTagHidden =
-						inlinesService &&
-						!serviceInlineHidden &&
-						nodeRenderData.elementType !== 'Service' &&
-						hiddenServices.has(service.id)}
 					{@const ServiceIcon = serviceDefinitions.getIconComponent(service.service_definition)}
 					{@const serviceColorHelper = serviceDefinitions.getColorHelper(
 						service.service_definition
@@ -671,9 +647,7 @@
 					})()}
 					<div
 						class="flex flex-col items-center justify-center py-2"
-						style="min-width: 0; max-width: 100%; width: 100%;{isServiceTagHidden
-							? ' opacity: 0.3;'
-							: ''}"
+						style="min-width: 0; max-width: 100%; width: 100%;"
 					>
 						<!-- Render the service name when either: (a) this card IS
 						  a Service element (the row is the card's own identity,
