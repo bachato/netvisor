@@ -153,6 +153,15 @@ export class LayoutGraph {
 	containers = new Map<string, LayoutContainer>();
 	elements = new Map<string, LayoutElement>();
 
+	// Lazy memo of getAbsolutePosition. Invalidated whenever a mutation path
+	// (applyElkResult / applyForceResult / updateElementSize / collapse / expand)
+	// touches container.position or element.position. Populated on first read.
+	private absolutePositionsCache = new Map<string, { x: number; y: number }>();
+
+	private invalidateAbsoluteCache(): void {
+		this.absolutePositionsCache.clear();
+	}
+
 	/** Build graph from topology nodes */
 	static fromTopology(nodes: TopologyNode[]): LayoutGraph {
 		const graph = new LayoutGraph();
@@ -225,6 +234,7 @@ export class LayoutGraph {
 				if (size) element.size = { ...size };
 			}
 		}
+		this.invalidateAbsoluteCache();
 	}
 
 	/** Get node position (works for both containers and elements) */
@@ -234,6 +244,9 @@ export class LayoutGraph {
 
 	/** Get absolute position by accumulating parent offsets (ELK stores positions relative to parent) */
 	getAbsolutePosition(nodeId: string): { x: number; y: number } | undefined {
+		const cached = this.absolutePositionsCache.get(nodeId);
+		if (cached) return { ...cached };
+
 		const container = this.containers.get(nodeId);
 		if (container) {
 			let x = container.position.x;
@@ -244,7 +257,9 @@ export class LayoutGraph {
 				y += parent.position.y;
 				parent = parent.parent;
 			}
-			return { x, y };
+			const result = { x, y };
+			this.absolutePositionsCache.set(nodeId, result);
+			return { ...result };
 		}
 		const element = this.elements.get(nodeId);
 		if (element) {
@@ -256,9 +271,48 @@ export class LayoutGraph {
 				y += parent.position.y;
 				parent = parent.parent;
 			}
-			return { x, y };
+			const result = { x, y };
+			this.absolutePositionsCache.set(nodeId, result);
+			return { ...result };
 		}
 		return undefined;
+	}
+
+	/**
+	 * Ancestor container IDs for an element or container (excluding `id` itself).
+	 * Walks LayoutElement.container / LayoutContainer.parent to the root.
+	 */
+	ancestorIdsOf(id: string): Set<string> {
+		const set = new Set<string>();
+		const element = this.elements.get(id);
+		const container = this.containers.get(id);
+		let parent: LayoutContainer | null = element?.container ?? container?.parent ?? null;
+		while (parent) {
+			set.add(parent.id);
+			parent = parent.parent;
+		}
+		return set;
+	}
+
+	/**
+	 * Flat list of absolute-positioned rects for every container and element
+	 * in the graph. Used by the handle picker to score candidates against
+	 * potential node crossings.
+	 */
+	getAllNodeRects(): Array<{ id: string; x: number; y: number; w: number; h: number }> {
+		const out: Array<{ id: string; x: number; y: number; w: number; h: number }> = [];
+		for (const [id, container] of this.containers) {
+			const pos = this.getAbsolutePosition(id);
+			if (!pos) continue;
+			const size = container.size;
+			out.push({ id, x: pos.x, y: pos.y, w: size.width, h: size.height });
+		}
+		for (const [id, element] of this.elements) {
+			const pos = this.getAbsolutePosition(id);
+			if (!pos) continue;
+			out.push({ id, x: pos.x, y: pos.y, w: element.size.x, h: element.size.y });
+		}
+		return out;
 	}
 
 	/** Get container size (respects collapsed state) */
@@ -372,6 +426,7 @@ export class LayoutGraph {
 			}
 		}
 
+		this.invalidateAbsoluteCache();
 		return affected;
 	}
 
@@ -401,6 +456,7 @@ export class LayoutGraph {
 			}
 		}
 
+		this.invalidateAbsoluteCache();
 		return affected;
 	}
 
@@ -421,6 +477,8 @@ export class LayoutGraph {
 				this.propagateResize(container);
 			}
 		}
+
+		this.invalidateAbsoluteCache();
 	}
 
 	/**
@@ -524,5 +582,6 @@ export class LayoutGraph {
 				}
 			}
 		}
+		this.invalidateAbsoluteCache();
 	}
 }
