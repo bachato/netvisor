@@ -299,7 +299,18 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/server
+          labels: |
+            org.opencontainers.image.title=Scanopy Server
+            org.opencontainers.image.description=Scanopy server (community edition) — Network diagrams that update themselves.
+            org.opencontainers.image.vendor=Scanopy
+            org.opencontainers.image.licenses=AGPL-3.0-only
+
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
@@ -312,6 +323,7 @@ jobs:
             PUBLIC_SERVER_PORT=60072
           tags: |
             ghcr.io/${{ github.repository }}/server:${{ github.event.release.tag_name }}-${{ matrix.suffix }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=server-${{ matrix.suffix }}
           cache-to: type=gha,mode=max,scope=server-${{ matrix.suffix }}
 
@@ -356,6 +368,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/server-commercial
+          labels: |
+            org.opencontainers.image.title=Scanopy Server (Commercial)
+            org.opencontainers.image.description=Scanopy server (commercial edition) — Network diagrams that update themselves.
+            org.opencontainers.image.vendor=Scanopy
+            org.opencontainers.image.licenses=AGPL-3.0-only OR LicenseRef-Scanopy-Commercial
+
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
@@ -369,6 +392,7 @@ jobs:
             CARGO_FEATURES=commercial
           tags: |
             ghcr.io/${{ github.repository }}/server-commercial:${{ github.event.release.tag_name }}-${{ matrix.suffix }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=server-commercial-${{ matrix.suffix }}
           cache-to: type=gha,mode=max,scope=server-commercial-${{ matrix.suffix }}
 
@@ -412,7 +436,18 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/daemon
+          labels: |
+            org.opencontainers.image.title=Scanopy Daemon
+            org.opencontainers.image.description=Scanopy daemon — network discovery agent.
+            org.opencontainers.image.vendor=Scanopy
+            org.opencontainers.image.licenses=AGPL-3.0-only
+
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
@@ -422,6 +457,7 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ github.repository }}/daemon:${{ github.event.release.tag_name }}
+          labels: ${{ steps.meta.outputs.labels }}
 
   # ============================================
   # Create multi-arch manifests for server images

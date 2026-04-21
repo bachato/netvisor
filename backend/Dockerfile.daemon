@@ -16,6 +16,15 @@ RUN apt-get update && apt-get install -y \
 COPY scanopy-daemon-linux-${TARGETARCH} /usr/local/bin/scanopy-daemon
 RUN chmod +x /usr/local/bin/scanopy-daemon
 
+# OCI Image Spec labels — https://github.com/opencontainers/image-spec/blob/main/annotations.md
+LABEL org.opencontainers.image.title="Scanopy Daemon" \
+      org.opencontainers.image.description="Scanopy daemon — network discovery agent." \
+      org.opencontainers.image.url="https://github.com/scanopy/scanopy" \
+      org.opencontainers.image.source="https://github.com/scanopy/scanopy" \
+      org.opencontainers.image.documentation="https://github.com/scanopy/scanopy#readme" \
+      org.opencontainers.image.vendor="Scanopy" \
+      org.opencontainers.image.licenses="AGPL-3.0-only"
+
 EXPOSE 60073
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \

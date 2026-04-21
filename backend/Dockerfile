@@ -82,6 +82,15 @@ FROM debian:bookworm-slim AS runtime
 # Required by Kamal for container management 
 LABEL service="scanopy"
 
+# OCI Image Spec labels — https://github.com/opencontainers/image-spec/blob/main/annotations.md
+LABEL org.opencontainers.image.title="Scanopy Server" \
+      org.opencontainers.image.description="Scanopy server — Network diagrams that update themselves." \
+      org.opencontainers.image.url="https://github.com/scanopy/scanopy" \
+      org.opencontainers.image.source="https://github.com/scanopy/scanopy" \
+      org.opencontainers.image.documentation="https://github.com/scanopy/scanopy#readme" \
+      org.opencontainers.image.vendor="Scanopy" \
+      org.opencontainers.image.licenses="AGPL-3.0-only"
+
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
     ca-certificates \
