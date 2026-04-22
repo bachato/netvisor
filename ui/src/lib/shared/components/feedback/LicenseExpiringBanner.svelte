@@ -6,6 +6,4 @@
 	let { intendedExpiry }: { intendedExpiry: string } = $props();
 </script>
 
-<AppBanner variant="info" icon={Clock}>
-	{license_expiringBanner({ intendedExpiry })}
-</AppBanner>
+<AppBanner variant="info" icon={Clock} body={license_expiringBanner({ intendedExpiry })} />

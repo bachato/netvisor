@@ -18,8 +18,11 @@
 	}
 </script>
 
-<AppBanner variant="warning" icon={AlertTriangle}>
-	Please verify your email. Check your inbox for a verification link.
+<AppBanner
+	variant="warning"
+	icon={AlertTriangle}
+	body="Please verify your email. Check your inbox for a verification link."
+>
 	{#snippet actions()}
 		<button
 			onclick={handleResend}
