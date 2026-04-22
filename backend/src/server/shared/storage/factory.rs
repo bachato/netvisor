@@ -1,5 +1,7 @@
 use anyhow::Result;
+use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 use sqlx::{PgPool, Pool, Postgres};
+use std::str::FromStr;
 use std::sync::Arc;
 use tower_sessions::{Expiry, SessionManagerLayer};
 use tower_sessions_sqlx_store::PostgresStore;
@@ -61,7 +63,8 @@ pub async fn create_session_store(
 
 impl StorageFactory {
     pub async fn new(database_url: &str, use_secure_session_cookies: bool) -> Result<Self> {
-        let pool = PgPool::connect(database_url).await?;
+        let connect_options = PgConnectOptions::from_str(database_url)?.statement_cache_capacity(0);
+        let pool = PgPoolOptions::new().connect_with(connect_options).await?;
 
         sqlx::migrate!("./migrations").run(&pool).await?;
 

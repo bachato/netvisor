@@ -663,6 +663,15 @@ impl From<sqlx::Error> for ApiError {
                     tracing::warn!("Database error: check constraint violation - {}", db_err);
                     return Self::bad_request("Invalid data");
                 }
+                if db_err.code().as_deref() == Some("0A000") {
+                    tracing::error!(
+                        cached_plan_invalidated = true,
+                        sqlstate = "0A000",
+                        "Database error: cached prepared-statement plan invalidated by schema change - {}",
+                        db_err
+                    );
+                    return Self::internal_error("Database operation failed");
+                }
                 // Other database errors are internal
                 tracing::error!("Database error: {}", db_err);
                 Self::internal_error("Database operation failed")
