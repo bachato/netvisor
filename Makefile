@@ -297,7 +297,7 @@ issue-license:
 	@cd backend && { \
 		secret=$$($(LICENSE_SECRET_CMD) "$(LICENSE_SECRET_REF)") || { echo "Error: secret-fetch command failed."; exit 1; }; \
 		[ -n "$$secret" ] || { echo "Error: secret-fetch returned an empty value."; exit 1; }; \
-		SCANOPY_LICENSE_SIGNING_KEY="$$secret" cargo run --quiet --bin license -- create --days $(DAYS); \
+		SCANOPY_LICENSE_SIGNING_KEY="$$secret" cargo run --bin license -- create --days $(DAYS); \
 	}
 
 clean:
