@@ -14,18 +14,13 @@ pub struct LicenseClaims {
     /// Issued-at (unix timestamp)
     pub iat: i64,
     /// Hard expiry (unix timestamp). The verifier rejects the key once
-    /// `now > exp`. This is always 7 days past `intended_exp` for keys
-    /// issued after the grace-period feature; the extra week is a silent
-    /// runway during which the UI warns the user to rotate keys.
+    /// `now > exp`. Always 7 days past `intended_exp` — the extra week
+    /// is a silent runway during which the UI warns the user to rotate.
     pub exp: i64,
     /// User-visible expiry (unix timestamp). CLI output and the UI show
     /// this as the license "expires on" date. When `intended_exp < now <= exp`
     /// the key is in its grace window.
-    ///
-    /// Optional only to stay compatible with keys issued before this field
-    /// existed; all newly-issued keys populate it.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub intended_exp: Option<i64>,
+    pub intended_exp: i64,
     /// Organization ID — populated when Cloud-provisioned (future)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub org_id: Option<String>,
@@ -69,15 +64,14 @@ impl LicenseStatus {
         chrono::DateTime::from_timestamp(claims.exp, 0).map(|d| d.format("%Y-%m-%d").to_string())
     }
 
-    /// User-visible expiry date as ISO date string, if available. Falls back
-    /// to `exp` for legacy keys issued before `intended_exp` existed.
+    /// User-visible expiry date as ISO date string, if available.
     pub fn intended_expiry_date(&self) -> Option<String> {
         let claims = match self {
             LicenseStatus::Valid(c) | LicenseStatus::Expired(c) => c,
             _ => return None,
         };
-        let ts = claims.intended_exp.unwrap_or(claims.exp);
-        chrono::DateTime::from_timestamp(ts, 0).map(|d| d.format("%Y-%m-%d").to_string())
+        chrono::DateTime::from_timestamp(claims.intended_exp, 0)
+            .map(|d| d.format("%Y-%m-%d").to_string())
     }
 
     /// Whether the license is currently in its grace window —
@@ -92,9 +86,6 @@ impl LicenseStatus {
         let LicenseStatus::Valid(claims) = self else {
             return false;
         };
-        let Some(intended_exp) = claims.intended_exp else {
-            return false;
-        };
-        intended_exp < now && now <= claims.exp
+        claims.intended_exp < now && now <= claims.exp
     }
 }

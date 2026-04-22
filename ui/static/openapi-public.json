@@ -10366,14 +10366,14 @@
             ],
             "description": "Association between a service and a port / interface that the service is listening on",
             "example": {
-              "created_at": "2026-04-22T14:34:26.622417Z",
-              "id": "255788a1-2f67-4b07-b72e-c9c40a05ade5",
+              "created_at": "2026-04-22T15:57:37.855455Z",
+              "id": "b4e6036e-f983-4b84-b97e-5e509b114bd0",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-22T14:34:26.622417Z"
+              "updated_at": "2026-04-22T15:57:37.855455Z"
             }
           },
           "error": {
@@ -11272,14 +11272,14 @@
                 {
                   "bindings": [
                     {
-                      "created_at": "2026-04-22T14:34:26.605756Z",
-                      "id": "262f2112-552f-4162-bf97-7089f425d3cf",
+                      "created_at": "2026-04-22T15:57:37.842931Z",
+                      "id": "cb907eaa-fdbf-4129-b12a-ab78da14b13c",
                       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                       "network_id": "550e8400-e29b-41d4-a716-446655440002",
                       "port_id": "550e8400-e29b-41d4-a716-446655440006",
                       "service_id": "550e8400-e29b-41d4-a716-446655440007",
                       "type": "Port",
-                      "updated_at": "2026-04-22T14:34:26.605756Z"
+                      "updated_at": "2026-04-22T15:57:37.842931Z"
                     }
                   ],
                   "created_at": "2026-01-15T10:30:00Z",
@@ -11288,7 +11288,7 @@
                   "name": "nginx",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "position": 0,
-                  "service_definition": "Prometheus Node Exporter",
+                  "service_definition": "Portainer",
                   "source": {
                     "type": "Manual"
                   },
@@ -12024,14 +12024,14 @@
             "example": {
               "bindings": [
                 {
-                  "created_at": "2026-04-22T14:34:26.617752Z",
-                  "id": "bfbf4bfe-295b-4d9f-bac9-0f568ace54f6",
+                  "created_at": "2026-04-22T15:57:37.851688Z",
+                  "id": "f8b7203e-ee5a-4b4f-9742-e45baeec7fa7",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-22T14:34:26.617752Z"
+                  "updated_at": "2026-04-22T15:57:37.851688Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -12040,7 +12040,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Prometheus Node Exporter",
+              "service_definition": "Portainer",
               "source": {
                 "type": "Manual"
               },
@@ -13419,14 +13419,14 @@
         ],
         "description": "Association between a service and a port / interface that the service is listening on",
         "example": {
-          "created_at": "2026-04-22T14:34:26.606114Z",
-          "id": "5ebaa8a7-ebab-45b6-b40f-532493506a91",
+          "created_at": "2026-04-22T15:57:37.843148Z",
+          "id": "a9167def-df89-4721-9003-09b09788a564",
           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "port_id": "550e8400-e29b-41d4-a716-446655440006",
           "service_id": "550e8400-e29b-41d4-a716-446655440007",
           "type": "Port",
-          "updated_at": "2026-04-22T14:34:26.606114Z"
+          "updated_at": "2026-04-22T15:57:37.843148Z"
         }
       },
       "BindingBase": {
@@ -13956,7 +13956,7 @@
               "id": "550e8400-e29b-41d4-a716-446655440007",
               "name": "nginx",
               "position": 0,
-              "service_definition": "Prometheus Node Exporter",
+              "service_definition": "Portainer",
               "tags": [],
               "virtualization": null
             }
@@ -16480,14 +16480,14 @@
             {
               "bindings": [
                 {
-                  "created_at": "2026-04-22T14:34:26.605270Z",
-                  "id": "f9c11ea7-3d56-4d4d-a5cc-a155010c9fd3",
+                  "created_at": "2026-04-22T15:57:37.842625Z",
+                  "id": "4d135e82-1d6f-4d43-aea1-e799930e06c0",
                   "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                   "network_id": "550e8400-e29b-41d4-a716-446655440002",
                   "port_id": "550e8400-e29b-41d4-a716-446655440006",
                   "service_id": "550e8400-e29b-41d4-a716-446655440007",
                   "type": "Port",
-                  "updated_at": "2026-04-22T14:34:26.605270Z"
+                  "updated_at": "2026-04-22T15:57:37.842625Z"
                 }
               ],
               "created_at": "2026-01-15T10:30:00Z",
@@ -16496,7 +16496,7 @@
               "name": "nginx",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "position": 0,
-              "service_definition": "Prometheus Node Exporter",
+              "service_definition": "Portainer",
               "source": {
                 "type": "Manual"
               },
@@ -18723,14 +18723,14 @@
                   {
                     "bindings": [
                       {
-                        "created_at": "2026-04-22T14:34:26.594189Z",
-                        "id": "1ee9e36b-4a17-4f44-a38b-c11cb2467025",
+                        "created_at": "2026-04-22T15:57:37.836286Z",
+                        "id": "c3d3e324-1768-4148-b9e5-b76820ddeb4e",
                         "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                         "network_id": "550e8400-e29b-41d4-a716-446655440002",
                         "port_id": "550e8400-e29b-41d4-a716-446655440006",
                         "service_id": "550e8400-e29b-41d4-a716-446655440007",
                         "type": "Port",
-                        "updated_at": "2026-04-22T14:34:26.594189Z"
+                        "updated_at": "2026-04-22T15:57:37.836286Z"
                       }
                     ],
                     "created_at": "2026-01-15T10:30:00Z",
@@ -18739,7 +18739,7 @@
                     "name": "nginx",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "position": 0,
-                    "service_definition": "Prometheus Node Exporter",
+                    "service_definition": "Portainer",
                     "source": {
                       "type": "Manual"
                     },
@@ -18816,14 +18816,14 @@
               "example": {
                 "bindings": [
                   {
-                    "created_at": "2026-04-22T14:34:26.616490Z",
-                    "id": "01186c4f-2dc5-4d7a-bce8-de78020b4b8c",
+                    "created_at": "2026-04-22T15:57:37.850696Z",
+                    "id": "3a7eb417-69ca-47cb-a12c-c1bc171f06fe",
                     "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
                     "network_id": "550e8400-e29b-41d4-a716-446655440002",
                     "port_id": "550e8400-e29b-41d4-a716-446655440006",
                     "service_id": "550e8400-e29b-41d4-a716-446655440007",
                     "type": "Port",
-                    "updated_at": "2026-04-22T14:34:26.616490Z"
+                    "updated_at": "2026-04-22T15:57:37.850696Z"
                   }
                 ],
                 "created_at": "2026-01-15T10:30:00Z",
@@ -18832,7 +18832,7 @@
                 "name": "nginx",
                 "network_id": "550e8400-e29b-41d4-a716-446655440002",
                 "position": 0,
-                "service_definition": "Prometheus Node Exporter",
+                "service_definition": "Portainer",
                 "source": {
                   "type": "Manual"
                 },
@@ -20083,14 +20083,14 @@
         "example": {
           "bindings": [
             {
-              "created_at": "2026-04-22T14:34:26.605995Z",
-              "id": "3122f0e1-5ba4-4682-ae19-7f0ce5eff08f",
+              "created_at": "2026-04-22T15:57:37.843073Z",
+              "id": "c4d0273e-8425-4942-9500-568ff878ddbc",
               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
               "network_id": "550e8400-e29b-41d4-a716-446655440002",
               "port_id": "550e8400-e29b-41d4-a716-446655440006",
               "service_id": "550e8400-e29b-41d4-a716-446655440007",
               "type": "Port",
-              "updated_at": "2026-04-22T14:34:26.605995Z"
+              "updated_at": "2026-04-22T15:57:37.843073Z"
             }
           ],
           "created_at": "2026-01-15T10:30:00Z",
@@ -20099,7 +20099,7 @@
           "name": "nginx",
           "network_id": "550e8400-e29b-41d4-a716-446655440002",
           "position": 0,
-          "service_definition": "Prometheus Node Exporter",
+          "service_definition": "Portainer",
           "source": {
             "type": "Manual"
           },

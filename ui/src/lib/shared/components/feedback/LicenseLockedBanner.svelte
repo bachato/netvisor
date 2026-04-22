@@ -6,6 +6,8 @@
 	let { status }: { status: 'expired' | 'invalid' } = $props();
 </script>
 
-<AppBanner variant="danger" icon={ShieldAlert}>
-	{status === 'expired' ? license_expiredBanner() : license_invalidBanner()}
-</AppBanner>
+<AppBanner
+	variant="danger"
+	icon={ShieldAlert}
+	body={status === 'expired' ? license_expiredBanner() : license_invalidBanner()}
+/>

@@ -5,12 +5,13 @@
 	let {
 		variant = 'warning',
 		icon: Icon,
-		children,
+		body,
 		actions
 	}: {
 		variant: 'info' | 'warning' | 'danger';
 		icon: IconComponent;
-		children: Snippet;
+		/** Banner body. Rendered as HTML to support inline anchors (e.g. mailto links). */
+		body: string;
 		actions?: Snippet;
 	} = $props();
 
@@ -26,9 +27,8 @@
 <div class="border-b px-4 py-2 {variantClasses[variant]}">
 	<div class="mx-auto flex items-center justify-center gap-2 text-sm">
 		<Icon class="h-4 w-4 shrink-0" />
-		<span>
-			{@render children()}
-		</span>
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -- body sources are paraglide-authored i18n strings, never user input -->
+		<span>{@html body}</span>
 		{#if actions}
 			{@render actions()}
 		{/if}

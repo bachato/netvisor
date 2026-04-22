@@ -6,6 +6,8 @@
 	let { intendedExpiry, hardExpiry }: { intendedExpiry: string; hardExpiry: string } = $props();
 </script>
 
-<AppBanner variant="warning" icon={ShieldAlert}>
-	{license_graceBanner({ intendedExpiry, hardExpiry })}
-</AppBanner>
+<AppBanner
+	variant="warning"
+	icon={ShieldAlert}
+	body={license_graceBanner({ intendedExpiry, hardExpiry })}
+/>

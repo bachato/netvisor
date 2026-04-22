@@ -2968,14 +2968,14 @@ export interface components {
             /**
              * @description Association between a service and a port / interface that the service is listening on
              * @example {
-             *       "created_at": "2026-04-22T14:34:26.622418Z",
-             *       "id": "98aea7de-424a-4df9-bbc4-69649201f4f8",
+             *       "created_at": "2026-04-22T15:57:37.855455Z",
+             *       "id": "884790f4-3e17-4623-a93a-8a9928de57f7",
              *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *       "type": "Port",
-             *       "updated_at": "2026-04-22T14:34:26.622418Z"
+             *       "updated_at": "2026-04-22T15:57:37.855455Z"
              *     }
              */
             data?: components["schemas"]["BindingBase"] & {
@@ -3262,14 +3262,14 @@ export interface components {
              *         {
              *           "bindings": [
              *             {
-             *               "created_at": "2026-04-22T14:34:26.605776Z",
-             *               "id": "63189bbd-6bed-4da2-bf04-736372debd81",
+             *               "created_at": "2026-04-22T15:57:37.842909Z",
+             *               "id": "00326136-141c-4cc4-bd84-88a80e4cd640",
              *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *               "type": "Port",
-             *               "updated_at": "2026-04-22T14:34:26.605776Z"
+             *               "updated_at": "2026-04-22T15:57:37.842909Z"
              *             }
              *           ],
              *           "created_at": "2026-01-15T10:30:00Z",
@@ -3278,7 +3278,7 @@ export interface components {
              *           "name": "nginx",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "position": 0,
-             *           "service_definition": "Prometheus Node Exporter",
+             *           "service_definition": "Portainer",
              *           "source": {
              *             "type": "Manual"
              *           },
@@ -3557,14 +3557,14 @@ export interface components {
              * @example {
              *       "bindings": [
              *         {
-             *           "created_at": "2026-04-22T14:34:26.617780Z",
-             *           "id": "b20258ab-a415-4453-b7ab-fe354acca75a",
+             *           "created_at": "2026-04-22T15:57:37.851712Z",
+             *           "id": "c6fccd0d-a3b0-42cd-a038-5354a135769b",
              *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
              *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
              *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
              *           "type": "Port",
-             *           "updated_at": "2026-04-22T14:34:26.617780Z"
+             *           "updated_at": "2026-04-22T15:57:37.851712Z"
              *         }
              *       ],
              *       "created_at": "2026-01-15T10:30:00Z",
@@ -3573,7 +3573,7 @@ export interface components {
              *       "name": "nginx",
              *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
              *       "position": 0,
-             *       "service_definition": "Prometheus Node Exporter",
+             *       "service_definition": "Portainer",
              *       "source": {
              *         "type": "Manual"
              *       },
@@ -3934,14 +3934,14 @@ export interface components {
         /**
          * @description Association between a service and a port / interface that the service is listening on
          * @example {
-         *       "created_at": "2026-04-22T14:34:26.606144Z",
-         *       "id": "0b0f9b5b-7da6-4158-883b-aabf7f2d34cb",
+         *       "created_at": "2026-04-22T15:57:37.843118Z",
+         *       "id": "1aa2632c-fd09-40b1-b2fa-94a09ab2befb",
          *       "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *       "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *       "type": "Port",
-         *       "updated_at": "2026-04-22T14:34:26.606144Z"
+         *       "updated_at": "2026-04-22T15:57:37.843118Z"
          *     }
          */
         Binding: components["schemas"]["BindingBase"] & {
@@ -4126,7 +4126,7 @@ export interface components {
          *           "id": "550e8400-e29b-41d4-a716-446655440007",
          *           "name": "nginx",
          *           "position": 0,
-         *           "service_definition": "Prometheus Node Exporter",
+         *           "service_definition": "Portainer",
          *           "tags": [],
          *           "virtualization": null
          *         }
@@ -4995,14 +4995,14 @@ export interface components {
          *         {
          *           "bindings": [
          *             {
-         *               "created_at": "2026-04-22T14:34:26.605284Z",
-         *               "id": "b44aeca7-476d-4cbe-83a1-94797237f653",
+         *               "created_at": "2026-04-22T15:57:37.842617Z",
+         *               "id": "5dcf3f92-04de-4250-8a9f-69b634017f58",
          *               "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *               "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *               "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *               "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *               "type": "Port",
-         *               "updated_at": "2026-04-22T14:34:26.605284Z"
+         *               "updated_at": "2026-04-22T15:57:37.842617Z"
          *             }
          *           ],
          *           "created_at": "2026-01-15T10:30:00Z",
@@ -5011,7 +5011,7 @@ export interface components {
          *           "name": "nginx",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "position": 0,
-         *           "service_definition": "Prometheus Node Exporter",
+         *           "service_definition": "Portainer",
          *           "source": {
          *             "type": "Manual"
          *           },
@@ -6190,14 +6190,14 @@ export interface components {
          * @example {
          *       "bindings": [
          *         {
-         *           "created_at": "2026-04-22T14:34:26.606018Z",
-         *           "id": "18fe05d6-7eed-43ca-9461-4a9b331cc6bc",
+         *           "created_at": "2026-04-22T15:57:37.843045Z",
+         *           "id": "30177052-1c1c-4ab1-9772-5b24bafe1534",
          *           "ip_address_id": "550e8400-e29b-41d4-a716-446655440005",
          *           "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *           "port_id": "550e8400-e29b-41d4-a716-446655440006",
          *           "service_id": "550e8400-e29b-41d4-a716-446655440007",
          *           "type": "Port",
-         *           "updated_at": "2026-04-22T14:34:26.606018Z"
+         *           "updated_at": "2026-04-22T15:57:37.843045Z"
          *         }
          *       ],
          *       "created_at": "2026-01-15T10:30:00Z",
@@ -6206,7 +6206,7 @@ export interface components {
          *       "name": "nginx",
          *       "network_id": "550e8400-e29b-41d4-a716-446655440002",
          *       "position": 0,
-         *       "service_definition": "Prometheus Node Exporter",
+         *       "service_definition": "Portainer",
          *       "source": {
          *         "type": "Manual"
          *       },

@@ -430,10 +430,26 @@ async fn main() -> anyhow::Result<()> {
                 tracing::info!(target: LOG_TARGET, "  License:         not required (community)");
             }
             scanopy::server::license::types::LicenseStatus::Valid(claims) => {
-                let exp = chrono::DateTime::from_timestamp(claims.exp, 0)
+                let intended_exp = chrono::DateTime::from_timestamp(claims.intended_exp, 0)
                     .map(|d| d.format("%Y-%m-%d").to_string())
                     .unwrap_or_else(|| "unknown".to_string());
-                tracing::info!(target: LOG_TARGET, "  License:         valid (expires {})", exp);
+                if license_status.in_grace_period() {
+                    let hard_exp = chrono::DateTime::from_timestamp(claims.exp, 0)
+                        .map(|d| d.format("%Y-%m-%d").to_string())
+                        .unwrap_or_else(|| "unknown".to_string());
+                    tracing::warn!(
+                        target: LOG_TARGET,
+                        "  License:         GRACE PERIOD (expired {}, hard lockout {})",
+                        intended_exp,
+                        hard_exp,
+                    );
+                } else {
+                    tracing::info!(
+                        target: LOG_TARGET,
+                        "  License:         valid (expires {})",
+                        intended_exp,
+                    );
+                }
             }
             scanopy::server::license::types::LicenseStatus::Expired(_) => {
                 tracing::warn!(target: LOG_TARGET, "  License:         EXPIRED — server is in read-only mode");

@@ -98,7 +98,7 @@ impl LicenseService {
 mod tests {
     use super::*;
 
-    fn claims(iat: i64, exp: i64, intended_exp: Option<i64>) -> LicenseClaims {
+    fn claims(iat: i64, exp: i64, intended_exp: i64) -> LicenseClaims {
         LicenseClaims {
             sub: "scanopy-license".to_string(),
             iss: "scanopy".to_string(),
@@ -135,23 +135,22 @@ mod tests {
 
     #[test]
     fn license_claims_json_roundtrip_preserves_intended_exp() {
-        let original = claims(1_700_000_000, 1_800_000_000, Some(1_799_395_200));
+        let original = claims(1_700_000_000, 1_800_000_000, 1_799_395_200);
         let encoded = serde_json::to_string(&original).unwrap();
         let decoded: LicenseClaims = serde_json::from_str(&encoded).unwrap();
         assert_eq!(decoded.exp, original.exp);
-        assert_eq!(decoded.intended_exp, Some(1_799_395_200));
+        assert_eq!(decoded.intended_exp, 1_799_395_200);
     }
 
     #[test]
-    fn legacy_license_claims_without_intended_exp_decode() {
-        let legacy_json = r#"{
+    fn license_claims_rejects_missing_intended_exp() {
+        let json_missing_intended_exp = r#"{
             "sub": "scanopy-license",
             "iss": "scanopy",
             "iat": 1700000000,
             "exp": 1800000000
         }"#;
-        let decoded: LicenseClaims = serde_json::from_str(legacy_json).unwrap();
-        assert_eq!(decoded.intended_exp, None);
+        assert!(serde_json::from_str::<LicenseClaims>(json_missing_intended_exp).is_err());
     }
 
     #[test]
@@ -159,8 +158,8 @@ mod tests {
         let now = 1_700_000_000;
         let status = LicenseStatus::Valid(claims(
             now - 86_400 * 30,
-            now + 86_400 * 6,       // hard exp: 6 days from now
-            Some(now - 86_400 * 1), // intended exp: 1 day ago
+            now + 86_400 * 6, // hard exp: 6 days from now
+            now - 86_400,     // intended exp: 1 day ago
         ));
         assert!(status.in_grace_period_at(now));
     }
@@ -168,11 +167,8 @@ mod tests {
     #[test]
     fn in_grace_period_false_before_intended_expiry() {
         let now = 1_700_000_000;
-        let status = LicenseStatus::Valid(claims(
-            now - 86_400,
-            now + 86_400 * 372,
-            Some(now + 86_400 * 365),
-        ));
+        let status =
+            LicenseStatus::Valid(claims(now - 86_400, now + 86_400 * 372, now + 86_400 * 365));
         assert!(!status.in_grace_period_at(now));
     }
 
@@ -183,46 +179,25 @@ mod tests {
         // grace window ends at `exp`.
         let status = LicenseStatus::Valid(claims(
             now - 86_400 * 400,
-            now - 86_400,           // hard exp: 1 day ago
-            Some(now - 86_400 * 8), // intended exp: 8 days ago
+            now - 86_400,     // hard exp: 1 day ago
+            now - 86_400 * 8, // intended exp: 8 days ago
         ));
-        assert!(!status.in_grace_period_at(now));
-    }
-
-    #[test]
-    fn in_grace_period_false_for_legacy_key_without_intended_exp() {
-        let now = 1_700_000_000;
-        let status = LicenseStatus::Valid(claims(now - 86_400, now + 86_400, None));
         assert!(!status.in_grace_period_at(now));
     }
 
     #[test]
     fn in_grace_period_false_when_expired_variant() {
         let now = 1_700_000_000;
-        let status = LicenseStatus::Expired(claims(
-            now - 86_400 * 400,
-            now - 86_400,
-            Some(now - 86_400 * 8),
-        ));
+        let status =
+            LicenseStatus::Expired(claims(now - 86_400 * 400, now - 86_400, now - 86_400 * 8));
         assert!(!status.in_grace_period_at(now));
     }
 
     #[test]
-    fn intended_expiry_date_falls_back_to_exp_for_legacy_keys() {
+    fn intended_expiry_date_uses_intended_exp_not_hard_exp() {
         let now = 1_700_000_000;
-        let status = LicenseStatus::Valid(claims(now - 86_400, now + 86_400, None));
-        // Both dates resolve to the same ISO string when intended_exp is absent.
-        assert_eq!(status.intended_expiry_date(), status.expiry_date());
-    }
-
-    #[test]
-    fn intended_expiry_date_uses_intended_exp_when_present() {
-        let now = 1_700_000_000;
-        let status = LicenseStatus::Valid(claims(
-            now - 86_400,
-            now + 86_400 * 372,
-            Some(now + 86_400 * 365),
-        ));
+        let status =
+            LicenseStatus::Valid(claims(now - 86_400, now + 86_400 * 372, now + 86_400 * 365));
         assert_ne!(status.intended_expiry_date(), status.expiry_date());
     }
 }

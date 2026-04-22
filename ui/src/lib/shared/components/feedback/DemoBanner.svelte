@@ -3,8 +3,11 @@
 	import AppBanner from './AppBanner.svelte';
 </script>
 
-<AppBanner variant="info" icon={Rocket}>
-	You're exploring the demo. Ready to map your own network?
+<AppBanner
+	variant="info"
+	icon={Rocket}
+	body="You're exploring the demo. Ready to map your own network?"
+>
 	{#snippet actions()}
 		<a
 			href="https://app.scanopy.net/onboarding"
