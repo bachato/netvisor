@@ -174,7 +174,16 @@ pub struct PublicConfigResponse {
     pub needs_cookie_consent: bool,
     pub deployment_type: DeploymentType,
     pub license_status: Option<String>,
+    /// Hard expiry — the drop-dead date after which the server rejects
+    /// the key. Referenced by the grace-period banner.
     pub license_expiry: Option<String>,
+    /// User-visible expiry — the date displayed to end users under
+    /// normal operation. 7 days earlier than `license_expiry` for keys
+    /// issued after grace-period support landed.
+    pub license_intended_expiry: Option<String>,
+    /// True when the license is past `intended_exp` but not yet past
+    /// the hard `exp` — the silent grace window.
+    pub license_in_grace_period: bool,
 }
 
 impl Default for ServerConfig {
@@ -398,6 +407,8 @@ pub async fn get_public_config(State(state): State<Arc<AppState>>) -> impl IntoR
     let current_license = state.license_service.current_status().await;
     let license_status = current_license.as_api_string().map(String::from);
     let license_expiry = current_license.expiry_date();
+    let license_intended_expiry = current_license.intended_expiry_date();
+    let license_in_grace_period = current_license.in_grace_period();
 
     (
         [(CACHE_CONTROL, "no-store, no-cache, must-revalidate")],
@@ -421,6 +432,8 @@ pub async fn get_public_config(State(state): State<Arc<AppState>>) -> impl IntoR
             deployment_type,
             license_status,
             license_expiry,
+            license_intended_expiry,
+            license_in_grace_period,
         })),
     )
 }

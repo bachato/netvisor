@@ -5,6 +5,10 @@ use scanopy::server::license::{
     keys::encoding_key_from_env, service::LicenseService, types::LicenseClaims,
 };
 
+/// Silent grace window added past the user-visible expiry. Hard-coded —
+/// per-tier grace is explicitly out of scope.
+const GRACE_PERIOD_DAYS: i64 = 7;
+
 #[derive(Parser)]
 #[command(name = "scanopy-license")]
 #[command(about = "Scanopy license key management")]
@@ -34,13 +38,17 @@ fn main() -> anyhow::Result<()> {
     match cli.command {
         Commands::Create { days } => {
             let now = Utc::now();
-            let exp = now + Duration::days(days as i64);
+            // `intended_exp` is the user-visible expiry. `exp` is the hard
+            // enforcement boundary, 7 days later — a silent grace window.
+            let intended_exp = now + Duration::days(days as i64);
+            let exp = intended_exp + Duration::days(GRACE_PERIOD_DAYS);
 
             let claims = LicenseClaims {
                 sub: "scanopy-license".to_string(),
                 iss: "scanopy".to_string(),
                 iat: now.timestamp(),
                 exp: exp.timestamp(),
+                intended_exp: Some(intended_exp.timestamp()),
                 org_id: None,
             };
 
@@ -49,7 +57,14 @@ fn main() -> anyhow::Result<()> {
             let token = jsonwebtoken::encode(&header, &claims, &key)?;
 
             println!("{}", token);
-            eprintln!("License created. Expires: {}", exp.format("%Y-%m-%d"));
+            eprintln!(
+                "License created. User-visible expiry: {}",
+                intended_exp.format("%Y-%m-%d")
+            );
+            eprintln!(
+                "                Hard expiry (with grace): {}",
+                exp.format("%Y-%m-%d")
+            );
 
             Ok(())
         }
@@ -65,11 +80,19 @@ fn main() -> anyhow::Result<()> {
                         .map(|d| d.format("%Y-%m-%d %H:%M:%S UTC").to_string())
                         .unwrap_or_else(|| "unknown".to_string());
 
-                    println!("Status:  VALID");
-                    println!("Issued:  {}", iat);
-                    println!("Expires: {}", exp);
+                    println!("Status:         VALID");
+                    println!("Issued:         {}", iat);
+                    if let Some(intended_exp_ts) = claims.intended_exp {
+                        let intended_exp = chrono::DateTime::from_timestamp(intended_exp_ts, 0)
+                            .map(|d| d.format("%Y-%m-%d %H:%M:%S UTC").to_string())
+                            .unwrap_or_else(|| "unknown".to_string());
+                        println!("User expiry:    {}", intended_exp);
+                        println!("Hard expiry:    {}", exp);
+                    } else {
+                        println!("Expires:        {}", exp);
+                    }
                     if let Some(org_id) = &claims.org_id {
-                        println!("Org ID:  {}", org_id);
+                        println!("Org ID:         {}", org_id);
                     }
                 }
                 scanopy::server::license::types::LicenseStatus::Expired(claims) => {

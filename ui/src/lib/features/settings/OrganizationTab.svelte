@@ -195,9 +195,10 @@
 						{#if org.plan}
 							<InfoRow label={common_plan()}>{org.plan.type}</InfoRow>
 						{/if}
-						{#if configQuery.data?.license_expiry}
+						{#if configQuery.data?.license_intended_expiry ?? configQuery.data?.license_expiry}
 							<InfoRow label={settings_org_licenseExpiry()}
-								>{configQuery.data.license_expiry}</InfoRow
+								>{configQuery.data.license_intended_expiry ??
+									configQuery.data.license_expiry}</InfoRow
 							>
 						{/if}
 					</InfoCard>
