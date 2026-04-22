@@ -386,8 +386,17 @@ async fn main() -> anyhow::Result<()> {
             "/api/health/ready",
             axum::routing::get(
                 |axum::extract::State(state): axum::extract::State<Arc<AppState>>| async move {
-                    match sqlx::query("SELECT 1").execute(&state.pool).await {
-                        Ok(_) => (
+                    // Fail fast: sqlx's default pool acquire_timeout is 30s, which makes a
+                    // down-DB readiness probe look like a hang to callers (k8s, kamal,
+                    // compat-check.sh). A 2s budget is still multiple round-trips on a
+                    // healthy pool.
+                    let probe = tokio::time::timeout(
+                        Duration::from_secs(2),
+                        sqlx::query("SELECT 1").execute(&state.pool),
+                    )
+                    .await;
+                    match probe {
+                        Ok(Ok(_)) => (
                             axum::http::StatusCode::OK,
                             axum::Json(serde_json::json!({
                                 "success": true,
@@ -395,12 +404,20 @@ async fn main() -> anyhow::Result<()> {
                                 "error": null
                             })),
                         ),
-                        Err(e) => (
+                        Ok(Err(e)) => (
                             axum::http::StatusCode::SERVICE_UNAVAILABLE,
                             axum::Json(serde_json::json!({
                                 "success": false,
                                 "data": null,
                                 "error": format!("database unavailable: {}", e)
+                            })),
+                        ),
+                        Err(_) => (
+                            axum::http::StatusCode::SERVICE_UNAVAILABLE,
+                            axum::Json(serde_json::json!({
+                                "success": false,
+                                "data": null,
+                                "error": "database unavailable: probe timed out"
                             })),
                         ),
                     }
