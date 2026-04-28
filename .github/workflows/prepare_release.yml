@@ -91,7 +91,5 @@ jobs:
         # to decide whether to run the backward-compat harness / enum tests and
         # what OCI label to stamp on the built images.
         GENERATED_BODY=$(gh release view "$TAG" --json body -q '.body')
-        NEW_BODY="Deploy-Mode: ${DEPLOY_MODE}
-
-${GENERATED_BODY}"
+        NEW_BODY=$(printf 'Deploy-Mode: %s\n\n%s' "$DEPLOY_MODE" "$GENERATED_BODY")
         gh release edit "$TAG" --notes "$NEW_BODY"
