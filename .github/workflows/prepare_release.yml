@@ -81,10 +81,13 @@ jobs:
         DEPLOY_MODE: ${{ inputs.deploy_mode }}
       run: |
         TAG="v${{ inputs.version }}"
+        # Create as a draft first so the release.published event doesn't fire
+        # until after the Deploy-Mode marker is in the body. Otherwise
+        # release.yml reads a stale event payload and the marker is missed.
         gh release create "$TAG" \
           --title "$TAG" \
           --generate-notes \
-          --prerelease \
+          --draft \
           --target dev
 
         # Prepend a machine-readable Deploy-Mode marker that release.yml parses
@@ -93,3 +96,7 @@ jobs:
         GENERATED_BODY=$(gh release view "$TAG" --json body -q '.body')
         NEW_BODY=$(printf 'Deploy-Mode: %s\n\n%s' "$DEPLOY_MODE" "$GENERATED_BODY")
         gh release edit "$TAG" --notes "$NEW_BODY"
+
+        # Publish the draft as a prerelease — this fires release.published
+        # with the marker intact in the event payload.
+        gh release edit "$TAG" --draft=false --prerelease

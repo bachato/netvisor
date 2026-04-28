@@ -104,8 +104,15 @@ jobs:
       - name: Parse deploy mode from release body
         id: deploy_mode
         env:
-          RELEASE_BODY: ${{ github.event.release.body }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.release.tag_name }}
         run: |
+          # Re-fetch the live release body via the API instead of trusting
+          # github.event.release.body, which is a snapshot from the moment
+          # release.published fired. If the Deploy-Mode marker was added by
+          # an edit *after* publish (or any other post-create flow), the
+          # event payload wouldn't reflect it.
+          RELEASE_BODY=$(gh release view "$TAG" --json body -q '.body')
           if echo "$RELEASE_BODY" | grep -iq '^Deploy-Mode:[[:space:]]*downtime'; then
             MODE=downtime
           else
@@ -180,6 +187,19 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
         env:
           DATABASE_URL: ${{ steps.create_branch.outputs.db_url }}
+
+      - name: Warm Neon compute before compat container boots
+        if: steps.deploy_mode.outputs.mode != 'downtime'
+        env:
+          DATABASE_URL: ${{ steps.create_branch.outputs.db_url }}
+        run: |
+          # Neon branches autosuspend their compute when idle. Earlier steps
+          # (pg_dump + sqlx migrate) woke it, but several seconds may elapse
+          # before the compat container starts. A single SELECT here ensures
+          # compute is hot when the prior-release binary's pool tries to
+          # acquire its first connection — its acquire_timeout is much
+          # shorter than a cold-start wakeup.
+          psql "$DATABASE_URL" -c 'SELECT 1' >/dev/null
 
       - name: Log in to GHCR for compat-check image pull
         if: steps.deploy_mode.outputs.mode != 'downtime'
